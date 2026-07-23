@@ -232,3 +232,8 @@ kpis = {
 guardar_json(MEMORIA_FILE, memoria)
 guardar_json(KPIS_OUT, kpis)
 print("Ejecutado con motor finalizado y corregido.")
+
+return kpis
+
+if __name__ == "__main__":
+    procesar_inventario()
