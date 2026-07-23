@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Plantilla Fino Móvil v2.0</title>
+    <style>
+        /* Importación de Poppins e Inter juntas */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@400;600;700;800;900&display=swap');
+
+        /* Configuración de páginas para móvil (108mm x 192mm) */
+        @page page-cover {
+            size: 108mm 192mm;
+            margin: 0;
+            background-color: #000000; 
+            @bottom-left { content: none; }
+            @bottom-right { content: none; }
+            counter-reset: page 0;
+        }
+
+        .section-cover {
+            page: page-cover;
+            page-break-after: always;
+            height: 192mm;
+            box-sizing: border-box;
+            padding: 50mm 12mm 20mm 12mm;
+            text-align: center;
+            background-color: #000000;
+        }
+
+        .cover-title {
+            font-size: 20px; 
+            font-weight: 600; 
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 18mm;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .cover-business {
+            font-size: 14px; 
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .cover-date {
+            font-size: 12px; 
+            font-weight: 500;
+            color: #64748b;
+        }
+        
+        .kpi-circle {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: currentColor;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        
+        @page { 
+            size: 108mm 192mm; 
+            margin: 10mm 8mm;
+            background-color: #f1f5f9;
+            @bottom-left { 
+                content: "fino"; 
+                font-family: 'Poppins', sans-serif; 
+                font-weight: 700; 
+                font-size: 12px; 
+                color: rgba(100, 116, 139, 0.35); 
+            }
+            @bottom-right { 
+                content: "Pág " counter(page) "/" target-counter(url('#fin-del-reporte'), page); 
+                font-family: 'Inter', sans-serif; 
+                font-size: 12px; 
+                color: #64748b; 
+            }
+        }
+        
+        *, *::before, *::after { box-sizing: border-box; }
+        
+        /* Inter para el cuerpo, textos largos y tablas de datos */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f1f5f9;
+            color: #1e293b; 
+            line-height: 1.45; 
+            font-size: 14px; 
+        }
+
+        /* Poppins para identidad, títulos, subtítulos y números de impacto */
+        h1, h2, h3, h4, 
+        .cover-title, 
+        .business-name, 
+        .kpi-value, 
+        .kpi-label, 
+        .summary-title, 
+        .section-box-label, 
+        .evo-title, 
+        .evo-fase-label { 
+            font-family: 'Poppins', sans-serif; 
+        }
+
+        /* Estructura de Páginas */
+        .section-dashboard { page-break-before: always; page-break-after: always; }
+        .section-stability { page-break-after: always; }
+        .section-problems { page-break-after: always; }
+        .section-logros { page-break-after: always; }
+        .section-evolution { page-break-after: avoid; }
+        
+        /* Encabezados */
+        .header-premium { margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #0f172a; }
+        .header-top-row { display: block; width: 100%; margin-bottom: 6px; }
+        .header-cell-left { display: block; text-align: left; margin-bottom: 4px; }
+        .header-cell-right { display: block; text-align: left; }
+        h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.1; }
+        .business-name { font-size: 14px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .header-date { font-size: 12px; font-weight: 500; color: #94a3b8; }
+        
+        h2 { font-size: 18px; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 20px; margin-bottom: 12px; text-transform: uppercase; page-break-after: avoid; }
+        h3 { font-size: 18px; color: #0f172a; padding-bottom: 4px; margin-top: 18px; margin-bottom: 10px; text-transform: uppercase; page-break-after: avoid; }
+        .highlight { font-weight: 600; color: #0f172a; }
+        h4 { font-size: 16px; font-weight: 700; color: #475569; margin-top: 16px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px; page-break-after: avoid; }
+
+        /* Tarjeta de Resumen Ejecutivo */
+        .summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #1e40af; border-radius: 6px; padding: 12px; margin-bottom: 16px; page-break-inside: avoid; }
+        .summary-title { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .summary-text { font-size: 14px; color: #334155; margin: 0; line-height: 1.4; white-space: pre-line; }
+
+        /* KPIs Globales */
+        .kpi-row { display: block; width: 100%; margin-bottom: 12px; page-break-inside: avoid; }
+        .kpi-card { display: inline-block; width: 48%; background: #f8fafc; padding: 10px 4px 4px 4px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center; vertical-align: top; margin-bottom: 4px; position: relative; overflow: hidden; }
+        .kpi-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; }
+        .kpi-card.kpi-fino::before { background: linear-gradient(to right, #004aad, #cb6ce6); }
+        .kpi-card.kpi-bueno::before { background: #15803d; }
+        .kpi-card.kpi-regular::before { background: #b45309; }
+        .kpi-card.kpi-bajo::before { background: #b91c1c; }
+        .kpi-card.kpi-critico::before { background: #b91c1c; }
+        .kpi-card:nth-child(odd) { margin-right: 2%; }
+        .kpi-value { font-size: 20px; font-weight: 600; color: #0f172a; margin: 1px 0; }
+        .kpi-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .kpi-status { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 3px; margin-top: 0px; }
+        
+        .status-fino { color: #665cca; }
+        .status-bueno { color: #15803d; }
+        .status-regular { color: #b45309; }
+        .status-bajo { color: #b91c1c; }
+        .status-critico { color: #b91c1c; }
+
+        /* Categorías y Tablas */
+        .category-summary-container { 
+            background-color: #f8fafc; 
+            border: 1px solid #e2e8f0;
+            border-radius: 6px; 
+            padding: 12px 8px; 
+            margin-bottom: 16px; 
+            display: block; 
+            width: 100%; 
+            position: relative; 
+            overflow: hidden; 
+            page-break-inside: avoid; 
+        }
+        .category-summary-container::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #1e40af; }
+        .category-block { display: inline-block; width: 48%; text-align: center; vertical-align: top; padding: 8px 0; }
+        .category-block:nth-child(even) { border-left: 1px solid #94a3b8; }
+        .category-block:nth-child(n+3) { border-top: 1px solid #94a3b8; }
+        .category-label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 2px; display: block; }
+        .category-value { font-size: 16px; font-weight: 800; color: #0f172a; display: inline-block; }
+        .category-percentage { font-size: 12px; font-weight: 600; margin-left: 2px; display: inline-block; color: #475569; }
+        .color-green { color: #15803d !important; font-weight: 700; }
+        .color-blue { color: #1e40af !important; font-weight: 700; }
+        .color-gray { color: #475569; }
+
+        .table-container { 
+            background: #f8fafc; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 6px; 
+            padding: 6px 8px; 
+            margin-bottom: 16px; 
+            page-break-inside: auto !important; 
+            overflow: visible !important;
+        }
+        .prod-table tr { page-break-inside: avoid !important; }
+        .prod-table { width: 100%; border-collapse: collapse; }
+        .prod-table th { text-align: left; padding: 6px 4px; font-size: 12px; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+        .prod-table td { padding: 8px 4px; border-bottom: 1px solid #e2e8f0; font-size: 14px; vertical-align: middle; }
+        .prod-table tr:last-child td { border-bottom: none; }
+
+        /* Tarjetas de Acciones y Alertas */
+        .action-card-row { 
+            background: #f8fafc; 
+            border-radius: 8px; 
+            border: 1px solid #e2e8f0; 
+            padding: 12px; 
+            margin-bottom: 14px; 
+            width: 100%; 
+            page-break-inside: auto !important; 
+        }
+        .row-red { border-left: 4px solid #b91c1c; }
+        .row-amber { border-left: 4px solid #b45309; }
+        .row-green { border-left: 4px solid #15803d; }
+        .row-blue { border-left: 4px solid #1e40af; }
+        
+        .card-header-flex { margin-bottom: 8px; display: block; page-break-inside: avoid !important; page-break-after: avoid !important; }
+        .card-main-title { font-size: 16px; font-weight: 700; color: #0f172a; display: block; margin: 6px 0 4px 0; page-break-after: avoid !important; }
+        .card-description { font-size: 14px; color: #334155; margin: 6px 0 12px 0; line-height: 1.45; }
+        
+        .card-blocks-container { display: block; width: 100%; }
+        .sub-block { display: block; width: 100%; margin-bottom: 8px; page-break-inside: avoid !important; }
+        .sub-block:last-child { margin-bottom: 0; }
+        
+        /* Cajas de Información */
+        .box-consecuencia, .box-solucion, .box-porque, .box-impacto { border-radius: 6px; padding: 8px 10px; }
+        
+        .box-consecuencia { background-color: #fffbeb; border: 1px solid rgba(180, 83, 9, 0.18); }
+        .row-red .box-consecuencia { background-color: #fef2f2; border: 1px solid rgba(185, 28, 28, 0.18); }
+        
+        .box-solucion { background-color: #eff6ff; border: 1.5px dashed #1e40af; }
+        .row-blue .box-solucion { background-color: #eff6ff; border: 1.5px dashed #1e40af; }
+        .box-porque { background-color: #faf5ff; border: 1px solid rgba(126, 34, 206, 0.18); }
+        .box-impacto { background-color: #f0fdf4; border: 1px solid rgba(21, 128, 61, 0.18); }
+        
+        .section-box-label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .box-solucion .section-box-label { color: #1e40af; }
+        .box-consecuencia .section-box-label { color: #b45309; }
+        .row-red .box-consecuencia .section-box-label { color: #b91c1c; }
+        .box-porque .section-box-label { color: #7e22ce; }
+        .box-impacto .section-box-label { color: #15803d; }
+        
+        /* Listas dentro de Acción Recomendada */
+        .box-solucion ul { margin: 0; padding-left: 14px; }
+        .box-solucion li { font-size: 14px; color: #1e3a8a; line-height: 1.4; margin-bottom: 6px; }
+        .box-solucion li:last-child { margin-bottom: 0; }
+        
+        .section-box-text { font-size: 14px; color: #334155; margin: 0; line-height: 1.4; }
+        .box-solucion .section-box-text { color: #1e3a8a; }
+        .box-consecuencia .section-box-text { color: #7c2d12; }
+        .row-red .box-consecuencia .section-box-text { color: #7f1d1d; }
+        .box-porque .section-box-text { color: #581c87; }
+        .box-impacto .section-box-text { color: #14532d; }
+        
+        /* Badges */
+        .badge-status { font-weight: 700; border-radius: 4px; font-size: 10px; display: inline-block; padding: 2px 6px; text-transform: uppercase; }
+        .badge-green { background-color: #f0fdf4; color: #15803d; border: 1px solid rgba(21, 128, 61, 0.25); }
+        .badge-blue { background-color: #eff6ff; color: #1e40af; border: 1px solid rgba(30, 64, 175, 0.25); }
+        .row-red .badge-status { background-color: #fef2f2; color: #b91c1c; border: 1px solid rgba(185, 28, 28, 0.25); }
+        .row-amber .badge-status { background-color: #fffbeb; color: #b45309; border: 1px solid rgba(180, 83, 9, 0.25); }
+
+        /* Tarjeta de No Problemas (Operación Limpia) */
+        .no-problems-card { background-color: #f0fdf4; border: 1px dashed #15803d; border-radius: 8px; padding: 14px; text-align: center; margin-bottom: 14px; page-break-inside: avoid; }
+        .no-problems-title { font-size: 16px; font-weight: 700; color: #15803d; text-transform: uppercase; margin-bottom: 6px; display: block; }
+        .no-problems-text { font-size: 14px; color: #14532d; margin: 0; line-height: 1.4; }
+
+        /* Sección de Evolución (Roadmap 4 Fases) */
+        .evolution-desc-text { font-size: 14px; color: #475569; line-height: 1.35; margin-top: -2px; margin-bottom: 12px; }
+        .evolution-wrapper { margin-top: 4px; }
+        .evo-card-linear { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; width: 100%; display: block; page-break-inside: avoid; }
+        .evo-left-content { display: block; width: 100%; margin-bottom: 8px; }
+        .evo-right-meta { display: block; width: 100%; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+        
+        .evo-fase-label { font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .evo-title { font-size: 16px; font-weight: 700; color: #0f172a; margin: 2px 0 4px 0; }
+        .evo-desc { font-size: 14px; color: #475569; margin: 0; line-height: 1.4; }
+        .evo-bar-container { width: 100%; background-color: #cbd5e1; height: 5px; border-radius: 10px; overflow: hidden; margin-bottom: 4px; }
+        .evo-bar-fill { height: 100%; border-radius: 10px; }
+        .bg-success { background-color: #15803d; }
+        .bg-process { background-color: #1e40af; }
+        .bg-locked { background-color: #94a3b8; }
+        .evo-status-text { font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; }
+        .evo-stability-text { font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase; display: block; margin-top: 2px; }
+
+        /* Metas de Fase */
+        .evo-metas-box { 
+            margin-top: 8px; 
+            padding-top: 6px; 
+            border-top: 1px dashed #cbd5e1; 
+        }
+        .evo-meta-item { 
+            font-size: 11px; 
+            color: #475569; 
+            margin-bottom: 2px; 
+            line-height: 1.3;
+            display: block;
+        }
+        .evo-meta-label { font-weight: 600; color: #334155; }
+        .evo-meta-val { font-weight: 700; color: #0f172a; }
+        .evo-meta-ok { color: #15803d; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <!-- PORTADA -->
+    <div class="section-cover" style="text-align: center;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 150" style="display: inline-block; width: 80mm; height: auto; margin-bottom: 1mm;">
+            <defs>
+                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#004aad" />
+                    <stop offset="100%" stop-color="#cb6ce6" />
+                </linearGradient>
+            </defs>
+            <g transform="translate(28.5, 10)">
+                <text x="-25" y="95" style="font-family: 'Poppins', sans-serif; font-weight: 900;" font-size="106" fill="#ffffff" letter-spacing="1.4">fin</text>
+                <g transform="translate(136, 13) scale(0.78)">
+                    <polygon points="30,30 60,47.5 60,82.5 30,100 0,82.5 0,47.5" fill="url(#logoGrad)" stroke="#ffffff" stroke-width="14" stroke-linejoin="round"/>
+                </g>
+            </g>
+        </svg>
+
+        <div class="cover-title">Inteligencia de Negocios</div>
+        <div class="cover-business">[Nombre del Negocio]</div>
+        <div class="cover-date">[Fecha del Reporte]</div>
+    </div>
+
+    <!-- PÁGINA 1: DASHBOARD DE VENTAS -->
+    <div class="section-dashboard">
+        <div class="header-premium">
+            <div class="header-top-row">
+                <div class="header-cell-left">
+                    <div class="business-name">[Nombre del Negocio]</div>
+                </div>
+                <div class="header-cell-right">
+                    <div class="header-date">[Fecha del Reporte]</div>
+                </div>
+            </div>
+            <h1>Reporte Diario</h1>
+        </div>
+
+        <div class="summary-card">
+            <span class="summary-title">Resumen</span>
+            <p class="summary-text">[Resumen_Ejecutivo_Limpio]</p>
+        </div>
+
+        <h3>📊 Ventas de Hoy</h3>
+        <div class="kpi-row">
+            <div class="kpi-card [clase_linea_venta]">
+                <div class="kpi-label">Venta Total</div>
+                <div class="kpi-value">[venta_total]</div>
+                <div class="kpi-status [clase_status_venta]"><span class="kpi-circle"></span>[etiqueta_venta]</div>
+            </div>
+            <div class="kpi-card [clase_linea_ganancia]">
+                <div class="kpi-label">Ganancia Real</div>
+                <div class="kpi-value">[ganancia_real]</div>
+                <div class="kpi-status [clase_status_ganancia]"><span class="kpi-circle"></span>[etiqueta_ganancia]</div>
+            </div>
+            <div class="kpi-card [clase_linea_ticket]">
+                <div class="kpi-label">Ticket Promedio</div>
+                <div class="kpi-value">[ticket_promedio]</div>
+                <div class="kpi-status [clase_status_ticket]"><span class="kpi-circle"></span>[etiqueta_ticket]</div>
+            </div>
+            <div class="kpi-card [clase_linea_clientes]">
+                <div class="kpi-label">Clientes</div>
+                <div class="kpi-value">[total_clientes]</div>
+                <div class="kpi-status [clase_status_clientes]"><span class="kpi-circle"></span>[etiqueta_clientes]</div>
+            </div>
+        </div>
+      
+        <h4>Ventas por Categoría</h4>
+        <div class="category-summary-container">
+            <!-- [LOOP_CATEGORIAS_INICIO] -->
+            <div class="category-block">
+                <div class="category-label">[categoria_nombre]</div>
+                <span class="category-value">[categoria_monto]</span>
+                <span class="[categoria_clase_color]">([categoria_porcentaje])</span>
+            </div>
+            <!-- [LOOP_CATEGORIAS_FIN] -->
+        </div>
+
+        <h4>Productos Vendidos: [total_articulos_vendidos]</h4>
+        <div class="table-container">
+            <table class="prod-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th style="text-align: right;">Cant</th>
+                        <th style="text-align: right;">Total</th>
+                        <th style="text-align: right;">% Mix</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- [LOOP_PRODUCTOS_INICIO] -->
+                    <tr>
+                        <td class="highlight">[Producto]</td>
+                        <td style="text-align: right;">[Cantidad]</td>
+                        <td style="text-align: right; font-weight: 600;">[Monto]</td>
+                        <td style="text-align: right; font-weight: 600; color: #1e40af;">[%]</td>
+                    </tr>
+                    <!-- [LOOP_PRODUCTOS_FIN] -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- PÁGINA 2 (CONDICIONAL): PRUEBA DE ESTABILIDAD -->
+    <!-- [SI_PRUEBA_ESTABILIDAD_ACTIVA_INICIO] -->
+    <div class="section-stability">
+        <h2>⚖️ Prueba de Estabilidad</h2>
+        <div class="action-card-row row-blue">
+            <div class="card-header-flex">
+                <span class="badge-status badge-blue">Día [dia_prueba]/14</span>
+                <div class="card-main-title">[regla_estabilidad]</div>
+                <p class="card-description">[situacion_estabilidad]</p>
+            </div>
+            <div class="card-blocks-container">
+                <div class="sub-block">
+                    <div class="box-solucion">
+                        <span class="section-box-label">👉 Acción Recomendada</span>
+                        <ul>
+                            <!-- [LOOP_ACCIONES_ESTABILIDAD_INICIO] -->
+                            <li>[accion_estabilidad_item]</li>
+                            <!-- [LOOP_ACCIONES_ESTABILIDAD_FIN] -->
+                        </ul>
+                    </div>
+                </div>
+                <div class="sub-block">
+                    <div class="box-impacto">
+                        <span class="section-box-label">🎯 Beneficio Estimado</span>
+                        <p class="section-box-text">[beneficio_estabilidad]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- [SI_PRUEBA_ESTABILIDAD_ACTIVA_FIN] -->
+
+    <!-- PÁGINA 3: PROBLEMAS DETECTADOS -->
+    <div class="section-problems">
+        <h2>🚨 Problemas Detectados</h2>
+        
+        <!-- [SI_HAY_PROBLEMAS_INICIO] -->
+        <!-- [LOOP_ALERTAS_INICIO] -->
+        <div class="action-card-row [alerta_clase_color]">
+            <div class="card-header-flex">
+                <span class="badge-status">[alerta_urgencia_texto]</span>
+                <div class="card-main-title">[alerta_titulo]</div>
+                <p class="card-description">[alerta_situacion]</p>
+            </div>
+            <div class="card-blocks-container">
+                <div class="sub-block">
+                    <div class="box-consecuencia">
+                        <span class="section-box-label">⚠️ Riesgo</span>
+                        <p class="section-box-text">[alerta_consecuencia]</p>
+                    </div>
+                </div>
+                <div class="sub-block">
+                    <div class="box-solucion">
+                        <span class="section-box-label">👉 Acción Recomendada</span>
+                        <ul>
+                            <!-- [LOOP_ACCIONES_ALERTA_INICIO] -->
+                            <li>[accion_alerta_item]</li>
+                            <!-- [LOOP_ACCIONES_ALERTA_FIN] -->
+                        </ul>
+                    </div>
+                </div>
+                <div class="sub-block">
+                    <div class="box-porque">
+                        <span class="section-box-label">🧠 Por Qué Funciona</span>
+                        <p class="section-box-text">[alerta_porque_funciona]</p>
+                    </div>
+                </div>
+                <div class="sub-block">
+                    <div class="box-impacto">
+                        <span class="section-box-label">🎯 Beneficio Estimado</span>
+                        <p class="section-box-text">[alerta_beneficio]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [LOOP_ALERTAS_FIN] -->
+        <!-- [SI_HAY_PROBLEMAS_FIN] -->
+
+        <!-- [SI_NO_HAY_PROBLEMAS_INICIO] -->
+        <div class="no-problems-card">
+            <span class="no-problems-title">¡Excelente Trabajo!</span>
+            <p class="no-problems-text">Hoy todo está bajo control y no se detectaron problemas en la operación de tu negocio. Sigue así.</p>
+        </div>
+        <!-- [SI_NO_HAY_PROBLEMAS_FIN] -->
+    </div>
+
+    <!-- PÁGINA 4: LOGROS DEL DÍA -->
+    <div class="section-logros">
+        <h2>📈 Logros del Día</h2>
+        <!-- [LOOP_LOGROS_INICIO] -->
+        <div class="action-card-row row-green">
+            <div class="card-header-flex">
+                <span class="badge-status badge-green">Logro</span>
+                <div class="card-main-title">[logro_titulo]</div>
+                <p class="card-description">[logro_situacion]</p>
+            </div>
+            <div class="card-blocks-container">
+                <div class="sub-block">
+                    <div class="box-solucion">
+                        <span class="section-box-label">👉 Acción Recomendada</span>
+                        <ul>
+                            <!-- [LOOP_ACCIONES_LOGROS_INICIO] -->
+                            <li>[accion_logro_item]</li>
+                            <!-- [LOOP_ACCIONES_LOGROS_FIN] -->
+                        </ul>
+                    </div>
+                </div>
+                <div class="sub-block">
+                    <div class="box-impacto">
+                        <span class="section-box-label">🎯 Beneficio Estimado</span>
+                        <p class="section-box-text">[logro_beneficio]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [LOOP_LOGROS_FIN] -->
+    </div>
+
+    <!-- PÁGINA 5: EVOLUCIÓN (ROADMAP) -->
+    <div class="section-evolution">
+        <h2>🚀 Plan de Crecimiento</h2>
+        <p class="evolution-desc-text"></p>
+        
+        <div class="evolution-wrapper">
+            <!-- FASE 1 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 01</div>
+                    <div class="evo-title">Perder Menos</div>
+                    <p class="evo-desc">Elimina las fugas de dinero, mermas y desorden operativo en tu negocio.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_1_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_1_nombre]:</span> 
+                            <span class="evo-meta-val">[meta_1_actual] / [meta_1_objetivo]</span> 
+                            <span class="evo-meta-ok">[meta_1_check]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_1_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_1_clase_barra]" style="width: [fase_1_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_1_color_texto];">[fase_1_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_1_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_1_ACTIVA] -->
+                </div>
+            </div>
+
+            <!-- FASE 2 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 02</div>
+                    <div class="evo-title">Vender Más</div>
+                    <p class="evo-desc">Determina combos y promociones efectivas para que cada cliente compre más productos.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_2_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_2_nombre]:</span> 
+                            <span class="evo-meta-val">Meta [meta_2_objetivo]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_2_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_2_clase_barra]" style="width: [fase_2_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_2_color_texto];">[fase_2_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_2_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_2_ACTIVA] -->
+                </div>
+            </div>
+
+            <!-- FASE 3 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 03</div>
+                    <div class="evo-title">Más Clientes</div>
+                    <p class="evo-desc">Desarrolla estrategias para atraer nuevos compradores y fidelizar a los actuales.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_3_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_3_nombre]:</span> 
+                            <span class="evo-meta-val">Meta [meta_3_objetivo]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_3_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_3_clase_barra]" style="width: [fase_3_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_3_color_texto];">[fase_3_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_3_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_3_ACTIVA] -->
+                </div>
+            </div>
+
+            <!-- FASE 4 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 04</div>
+                    <div class="evo-title">Más Ganancia</div>
+                    <p class="evo-desc">Maximiza tus márgenes y rentabilidad total para aumentar tus ganancias totales.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_4_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_4_nombre]:</span> 
+                            <span class="evo-meta-val">Meta [meta_4_objetivo]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_4_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_4_clase_barra]" style="width: [fase_4_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_4_color_texto];">[fase_4_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_4_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_4_ACTIVA] -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="fin-del-reporte">&nbsp;</div>
+</body>
+</html>
