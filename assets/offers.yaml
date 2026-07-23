@@ -1,0 +1,560 @@
+# Retail AI Brain v2 — Offers — Enhanced Operational Intelligence YAML
+
+principles:
+  objective:
+    - maximize_cash_velocity
+    - maximize_margin_quality
+    - maximize_repeat_purchase
+    - minimize_trapped_inventory
+    - maximize_inventory_efficiency
+
+  reasoning_order:
+    - demand
+    - product_fit
+    - unit_economics
+    - inventory_health
+    - scaling
+    - operations
+
+  anti_patterns:
+    - optimize_operations_before_demand_validation
+    - scale_unvalidated_velocity
+    - compete_on_price
+    - carry_low_signal_skus
+    - overexpand_assortment
+    - optimize_vanity_metrics
+
+metrics:
+  inventory_turns:
+    formula: cogs / avg_inventory_cost
+    interpretation:
+      low: trapped_inventory
+      high: healthy_velocity
+
+  gmroi:
+    formula: gross_margin / avg_inventory_cost
+    interpretation:
+      low: inefficient_inventory_capital
+      high: productive_inventory_capital
+
+  sell_through_rate:
+    formula: units_sold / units_received
+    interpretation:
+      low: weak_demand_or_overbuying
+      high: strong_velocity
+
+  stock_cover_days:
+    formula: inventory_units / avg_daily_units_sold
+    interpretation:
+      low: stockout_risk
+      high: overstock_risk
+
+  repeat_purchase_rate:
+    formula: repeat_customers / total_customers
+    interpretation:
+      low: weak_retention
+      high: habit_strength
+
+  basket_size:
+    formula: total_revenue / total_transactions
+    interpretation:
+      low: weak_attachment
+      high: strong_cross_sell
+
+  margin_rate:
+    formula: gross_profit / revenue
+    interpretation:
+      low: margin_pressure
+      high: pricing_power
+
+decision_hierarchy:
+  p1: protect_cash_flow
+  p2: protect_fast_movers
+  p3: prevent_stockouts
+  p4: remove_dead_inventory
+  p5: improve_margin_density
+  p6: expand_high_gmroi_categories
+  p7: increase_repeat_purchase
+  p8: optimize_operations
+
+priority_weights:
+  cash_flow: critical
+  demand_strength: critical
+  inventory_health: critical
+  margin_quality: critical
+  stockout_risk: critical
+  repeat_purchase: high
+  category_growth: high
+  basket_growth: medium
+  operational_efficiency: medium
+  aesthetics: low
+
+timeframe_logic:
+  short_term:
+    compare:
+      - 7d
+      - prior_7d
+    use_for:
+      - velocity_shift
+      - stockout_risk
+      - promo_impact
+
+  medium_term:
+    compare:
+      - 30d
+      - prior_30d
+    use_for:
+      - category_health
+      - purchasing_accuracy
+      - margin_shift
+
+  long_term:
+    compare:
+      - 90d
+      - prior_90d
+    use_for:
+      - seasonality
+      - demand_decay
+      - retention_trends
+
+signals:
+  weak_demand:
+    detect:
+      - category_sales_down
+      - traffic_down
+      - repeat_purchase_down_storewide
+      - turns_down_storewide
+    actions:
+      - reduce_inventory_exposure
+      - compress_assortment
+      - reallocate_capital
+
+  weak_offer:
+    detect:
+      - high_exposure_low_sales
+      - low_attachment
+      - discount_dependency
+      - low_repeat_purchase
+    actions:
+      - replace_low_desire_skus
+      - improve_merchandising
+      - optimize_bundle_structure
+
+  commoditization:
+    detect:
+      - margin_compression
+      - substitution_rising
+      - promo_dependency
+      - price_sensitive_switching
+    actions:
+      - increase_exclusivity
+      - reduce_competitive_skus
+      - strengthen_premium_mix
+
+  trapped_cash:
+    detect:
+      - inventory_age_gt_120d
+      - turns_lt_2
+      - gmroi_lt_1
+    actions:
+      - liquidate
+      - stop_reorders
+      - compress_duplicates
+
+  scaling_candidate:
+    detect:
+      - accelerating_velocity
+      - healthy_margin
+      - repeat_purchase_rising
+      - category_growth
+    actions:
+      - increase_buy_depth
+      - protect_stock
+      - expand_assortment_adjacent
+
+cross_signal_reasoning:
+  declining_sales_rising_inventory:
+    diagnosis:
+      - weakening_demand
+      - overbuying
+    actions:
+      - reduce_reorders
+      - compress_assortment
+      - liquidate_slow_movers
+
+  rising_velocity_low_inventory_cover:
+    diagnosis:
+      - imminent_stockout_risk
+    actions:
+      - accelerate_reorders
+      - prioritize_fast_movers
+      - increase_safety_stock
+
+  margin_compression_discount_dependency:
+    diagnosis:
+      - commoditization
+      - weak_positioning
+    actions:
+      - reduce_discounting
+      - improve_premium_mix
+      - improve_exclusivity
+
+  high_traffic_low_conversion:
+    diagnosis:
+      - weak_offer_fit
+      - poor_merchandising
+      - pricing_misalignment
+    actions:
+      - improve_display
+      - improve_bundle_strategy
+      - optimize_pricing_ladder
+
+  rising_inventory_declining_turns_gmroi_down:
+    diagnosis:
+      - trapped_capital
+      - purchasing_inefficiency
+    actions:
+      - reduce_buying_depth
+      - liquidate_aging_stock
+      - redeploy_capital
+
+diagnostics:
+  diagnose_order:
+    - demand_failure
+    - fit_failure
+    - economics_failure
+    - inventory_failure
+    - operational_failure
+
+  demand_failure:
+    indicators:
+      - storewide_decline
+      - category_decline
+      - frequency_decline
+
+  fit_failure:
+    indicators:
+      - high_visibility_low_conversion
+      - weak_repeat_purchase
+      - weak_attachment
+
+  economics_failure:
+    indicators:
+      - margin_compression
+      - promo_dependency
+      - weak_gmroi
+
+  inventory_failure:
+    indicators:
+      - aging_inventory
+      - low_turns
+      - trapped_capital
+
+pattern_detection:
+  hero_sku:
+    conditions:
+      - high_velocity
+      - high_margin
+    action: scale_aggressively
+
+  traffic_driver:
+    conditions:
+      - high_velocity
+      - low_margin
+    action: protect_stock_and_attach_margin
+
+  profit_engine:
+    conditions:
+      - low_velocity
+      - high_margin
+    action: improve_visibility
+
+  dead_inventory:
+    conditions:
+      - low_velocity
+      - aging_inventory
+    action: liquidate
+
+  shelf_waster:
+    conditions:
+      - low_velocity
+      - low_margin
+    action: remove
+
+thresholds:
+  turns:
+    dangerous: "<2"
+    healthy: "4-8"
+    elite: "8+"
+
+  inventory_days:
+    dead_risk: ">120"
+    healthy: "30-60"
+
+  gmroi:
+    destructive: "<1"
+    healthy: "2-4"
+    elite: "4+"
+
+  stock_cover_days:
+    stockout_risk: "<7"
+    healthy: "14-30"
+    overstock_risk: ">60"
+
+  repeat_purchase_rate:
+    weak: "<15%"
+    healthy: "25-40%"
+    elite: ">40%"
+
+severity_scoring:
+  critical:
+    - gmroi_lt_1
+    - stockout_risk_on_hero_sku
+    - rapid_cash_flow_decline
+    - inventory_age_gt_180d
+
+  high:
+    - margin_compression
+    - declining_repeat_purchase
+    - turns_lt_2
+    - rapid_velocity_decline
+
+  medium:
+    - weak_attachment
+    - category_slowdown
+    - low_basket_growth
+
+  low:
+    - operational_inefficiency
+    - merchandising_issues
+
+action_rules:
+  increase_purchasing_if:
+    - accelerating_velocity
+    - rising_repeat_purchase
+    - healthy_margin
+    - stockout_risk
+    - category_growth
+
+  reduce_purchasing_if:
+    - aging_inventory
+    - declining_category
+    - margin_compression
+    - markdown_dependency
+    - substitution_rising
+
+  remove_if:
+    - low_margin
+    - low_velocity
+    - weak_attachment
+    - aging_inventory
+
+inventory_logic:
+  prioritize:
+    - inventory_turns
+    - gmroi
+    - stockout_prevention
+
+  inventory_goal:
+    - highest_cash_return_per_inventory_dollar
+
+  bias:
+    - fewer_better_skus
+    - high_turn_density
+    - low_idle_capital
+
+pricing_logic:
+  never_assume: price_problem
+
+  diagnose:
+    - perceived_value
+    - assortment_fit
+    - brand_strength
+    - pricing_ladder
+
+  optimize:
+    - premium_anchors
+    - bundles
+    - exclusivity
+
+  avoid:
+    - perpetual_discounting
+
+margin_logic:
+  prioritize:
+    - high_margin_fast_movers
+    - premium_mix
+    - differentiated_products
+
+  eliminate:
+    - commodity_skus
+    - duplicate_skus
+    - low_gmroi_inventory
+
+growth_logic:
+  growth_levers:
+    traffic:
+      - destination_products
+      - convenience_categories
+
+    basket:
+      - cross_sell
+      - bundles
+      - adjacency
+
+    frequency:
+      - replenishment_products
+      - consumables
+      - habits
+
+    margin:
+      - premium_mix
+      - exclusives
+
+retention_logic:
+  retention_drivers:
+    - replenishment
+    - convenience
+    - consistency
+    - staple_availability
+
+  failure_signals:
+    - declining_frequency
+    - declining_repeat_purchase
+    - inconsistent_baskets
+
+purchasing_logic:
+  purchase_bias:
+    - velocity
+    - repeat_purchase
+    - gmroi
+    - category_growth
+
+  reduce_exposure_to:
+    - slow_turns
+    - weak_margin
+    - aging_inventory
+
+scaling_logic:
+  scale_only_if:
+    - validated_demand
+    - stable_repeat_purchase
+    - healthy_margin
+    - healthy_turns
+
+  scale_targets:
+    - hero_skus
+    - high_gmroi_categories
+    - repeat_purchase_products
+
+risk_detection:
+  critical_risks:
+    cash_flow:
+      - high_inventory_low_velocity
+      - gmroi_lt_1
+
+    commoditization:
+      - promo_dependency
+      - margin_compression
+
+    stockout:
+      - accelerating_velocity
+      - low_inventory_cover
+
+failure_conditions:
+  - inventory_exceeds_demand
+  - overassortment
+  - trapped_capital
+  - unmanaged_margin_compression
+  - scaling_before_validation
+  - price_competition_dependency
+
+optimization_loops:
+  daily:
+    - detect_velocity_shift
+    - detect_stockout_risk
+    - detect_margin_shift
+    - detect_dead_inventory
+
+  weekly:
+    - rebalance_inventory
+    - adjust_purchasing
+    - compress_assortment
+
+  monthly:
+    - redeploy_capital
+    - optimize_category_mix
+
+thinking_style:
+  optimize_for:
+    - root_cause_over_symptom
+    - cash_efficiency_over_revenue
+    - repeatability_over_spikes
+    - velocity_over_volume
+
+  reject:
+    - vanity_metrics
+    - emotional_buying
+    - isolated_metric_analysis
+
+operational_constraints:
+  never_optimize:
+    - labor
+    - merchandising
+    - promotions
+    - pricing
+
+  before_validating:
+    - demand
+    - product_fit
+    - unit_economics
+
+report_generation_engine:
+  report_prioritization:
+    - critical_cash_threats
+    - stockout_risks
+    - trapped_inventory
+    - margin_collapse
+    - velocity_shifts
+
+  ranking_logic:
+    prioritize_by:
+      - severity
+      - cash_impact
+      - reversibility
+      - growth_potential
+
+  confidence_scoring:
+    increase_if:
+      - multiple_signals_overlap
+      - repeated_pattern_detection
+      - multi_timeframe_confirmation
+
+  output_format:
+    - signal
+    - diagnosis
+    - root_cause
+    - severity
+    - recommended_action
+    - expected_impact
+    - urgency
+
+reporting_rules:
+  outputs:
+    - critical_alerts
+    - highest_roi_actions
+    - cash_protection_actions
+    - growth_opportunities
+
+  mandatory_metrics:
+    - velocity_change
+    - inventory_age
+    - gmroi_change
+    - margin_change
+    - repeat_purchase_change
+
+  output_structure:
+    - signal
+    - diagnosis
+    - action
+    - expected_impact
