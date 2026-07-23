@@ -1,0 +1,109 @@
+# Modelo de Roadmap de Crecimiento
+
+## Propósito
+Este roadmap define la estrategia de crecimiento utilizada por el sistema. Su objetivo es establecer qué aspecto del negocio debe optimizarse primero, entendiendo que un crecimiento sostenible ocurre por etapas y que cada fase construye la base de la siguiente[cite: 6]. El roadmap no busca maximizar todos los indicadores simultáneamente, sino priorizar aquellos que generan el mayor impacto según el momento del negocio.
+
+---
+
+## Filosofía del Modelo
+El crecimiento de un negocio es acumulativo. Cada fase resuelve un conjunto de limitaciones antes de avanzar hacia objetivos más ambiciosos.
+
+La lógica general del modelo es:
+Datos → KPIs → Factores de crecimiento → Estado de la fase → Prioridades del negocio.
+
+* KPIs: Son indicadores medibles.
+* Factores de crecimiento: Representan los aspectos del negocio que esos KPIs reflejan.
+* Progreso de la fase: Se calcula mediante el cumplimiento ponderado de sus KPIs principales.
+
+---
+
+## Relación entre las Fases
+Las fases son secuenciales, pero no independientes. Al avanzar de fase:
+* La fase actual pasa a ser la prioridad estratégica.
+* Las fases anteriores continuarán supervisándose para evitar retrocesos.
+* Un problema crítico de una fase anterior sigue siendo relevante, aunque el negocio ya haya avanzado.
+
+### ⚠️ Regla General de Alertas (Filtro de Fase)
+* Límite operativo: El Auditor tiene estrictamente prohibido generar alertas para una fase superior a la fase actual del negocio.
+* Comportamiento del sistema: Las desviaciones o bajas puntuaciones en métricas de fases futuras no se consideran problemas actuales. Deben ignorarse o registrarse únicamente como notas informativas de fondo. El sistema solo genera alertas para la fase actual (para solucionar el cuello de botella activo) o para fases anteriores (para proteger la estabilidad ya ganada).
+---
+
+## Fase 1 — Estabilización Operativa
+
+### Objetivo
+Construir una operación estable antes de acelerar el crecimiento. Un negocio con problemas operativos difícilmente podrá crecer de forma sostenible.
+
+### Factores principales
+* Salud del inventario.
+* Disponibilidad de productos.
+* Control de pérdidas.
+
+### KPIs principales
+* Salud del inventario (%).
+* Productos en riesgo (%).
+* Productos vencidos (%).
+* Mermas.
+
+---
+
+## Fase 2 — Incrementar Ticket Promedio
+
+### Objetivo
+Aumentar el valor generado por cada cliente. Antes de atraer más clientes, es preferible maximizar el valor de los clientes actuales.
+
+### Factores principales
+* Valor promedio de compra.
+* Aprovechamiento del mix de productos.
+
+### KPIs principales
+* Ticket promedio.
+* Artículos por cliente.
+
+---
+
+## Fase 3 — Incrementar Tráfico
+
+### Objetivo
+Incrementar el volumen de ventas mediante un mayor flujo de clientes. Una vez optimizada la rentabilidad por cliente, el crecimiento proviene de aumentar la cantidad de clientes atendidos.
+
+### Factores principales
+* Flujo de clientes.
+* Volumen de ventas.
+
+### KPIs principales
+* Clientes atendidos.
+* Ventas diarias.
+
+---
+
+## Fase 4 — Escalar
+
+### Objetivo
+Incrementar el tamaño del negocio manteniendo la rentabilidad y el control operativo. El crecimiento deja de medirse únicamente por ventas y pasa a evaluarse por la capacidad de generar mayores beneficios de forma sostenible.
+
+### Factores principales
+* Rentabilidad.
+* Eficiencia operativa.
+
+### KPIs principales
+* Ganancia diaria.
+* Margen bruto.
+
+---
+
+## Interpretación del Progreso
+Cada fase posee objetivos medibles mediante sus KPIs principales. Cada KPI tiene un peso relativo dentro de la fase.
+
+* Porcentaje de avance: Representa el porcentaje de cumplimiento de dichos objetivos. Indica únicamente el avance dentro de la fase actual; no representa el estado general del negocio.
+* Periodo de estabilidad: Cuando una fase llega al 100%, entrará en periodo de estabilidad. Los días de estabilidad funcionan como un contador de 14 días para asegurar que el progreso logrado sea estable.
+* Meta de estabilidad: Durante estos 14 días, el objetivo NO es crecer ni avanzar. El único objetivo es blindar y defender los KPIs de la fase actual.
+* Pausa del contador: Si luego de completar la fase, no se cumplen las metas durante el periodo de estabilidad, el contador de días se pausa. Nunca se reinicia a cero.
+
+---
+
+## Principios Generales
+* El crecimiento sostenible ocurre por etapas.
+* La fase actual determina la prioridad estratégica del negocio.
+* Las fases anteriores nunca dejan de supervisarse.
+* Los KPIs son evidencia; los factores representan las causas subyacentes.
+* Resolver el principal limitante de la fase actual genera el mayor impacto sobre el crecimiento del negocio.
