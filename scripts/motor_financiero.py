@@ -1,16 +1,8 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Dict, Any, Optional
+def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dict, ventas_clasificado: dict) -> dict:
+    ventas_data = ventas_clasificado
+    inventario_data = inventario_actualizado
+    kpis_inventario_data = kpis_inventario
 
-app = FastAPI(title="Motor Financiero API")
-
-# Modelo de entrada de datos
-class SolicitudReporte(BaseModel):
-    ventas_data: Dict[str, Any]
-    inventario_data: Dict[str, Any]
-    kpis_inventario_data: Optional[Dict[str, Any]] = {}
-
-def calcular_reporte_diario(ventas_data: dict, inventario_data: dict, kpis_inventario_data: dict) -> dict:
     # 1. Información del sistema
     info_sistema_ventas = ventas_data.get("informacion_sistema", {})
     informacion_sistema = {
@@ -305,7 +297,7 @@ def calcular_reporte_diario(ventas_data: dict, inventario_data: dict, kpis_inven
         "participacion_top10_porcentaje": round(participacion_top10, 2)
     }
 
-    # Retorno final en diccionario
+    # Retorno final
     return {
         "informacion_sistema": informacion_sistema,
         "kpis_inventario": kpis_inventario_data,
@@ -320,16 +312,3 @@ def calcular_reporte_diario(ventas_data: dict, inventario_data: dict, kpis_inven
         "afinidad_productos": afinidad_productos,
         "concentracion": concentracion
     }
-
-# Endpoint POST
-@app.post("/generar-reporte")
-def generar_reporte_endpoint(payload: SolicitudReporte):
-    try:
-        resultado = calcular_reporte_diario(
-            ventas_data=payload.ventas_data,
-            inventario_data=payload.inventario_data,
-            kpis_inventario_data=payload.kpis_inventario_data
-        )
-        return resultado
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno al procesar el reporte: {str(e)}")
