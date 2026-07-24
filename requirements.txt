@@ -4,3 +4,5 @@ python-multipart
 weasyprint
 requests
 beautifulsoup4
+pandas
+openpyxl
