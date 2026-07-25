@@ -16,9 +16,11 @@ def registrar_error(lista_errores, codigo, nombre, motivo):
 
 def normalizar_catalogo(catalogo):
     """
-    Convierte el catálogo a diccionario indexado por codigo_articulo
-    soporta tanto formatos dict como list.
+    Convierte el catálogo a diccionario indexado por codigo_articulo.
+    Soporta formatos dict, list o None/vacío.
     """
+    if not catalogo:
+        return {}
     if isinstance(catalogo, list):
         return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo}
     elif isinstance(catalogo, dict):
@@ -63,14 +65,20 @@ def obtener_info_catalogo(codigo, nombre, catalogo_dict, errores):
 # FUNCIÓN PRINCIPAL
 # ==========================================
 
-def ejecutar_enriquecedor(ventas, inventario, catalogo_maestro):
-    catalogo_dict = normalizar_catalogo(catalogo_maestro)
+def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nuevos=None):
+    # 1. UNIR CATÁLOGOS
+    # normalizar_catalogo maneja valores None devueltos si la variable no existe
+    dict_memoria = normalizar_catalogo(catalogo_memoria)
+    dict_nuevos = normalizar_catalogo(catalogo_nuevos)
+    
+    # Unifica ambos diccionarios. Prevalecen los datos nuevos si hay coincidencia.
+    catalogo_dict = {**dict_memoria, **dict_nuevos}
     errores = []
 
     if not catalogo_dict:
-        raise ValueError("El catálogo maestro está vacío o no es válido.")
+        raise ValueError("No hay ningún catálogo disponible (memoria y nuevos están vacíos).")
 
-    # 1. ENRIQUECER TABLA MIX
+    # 2. ENRIQUECER TABLA MIX
     for producto in ventas.get("tabla_mix_productos", []):
         codigo = str(producto.get("codigo_articulo", "")).strip()
         nombre = str(producto.get("nombre", "")).strip()
@@ -79,12 +87,10 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_maestro):
         if info:
             producto[CAMPO_CATEGORIA] = info[CAMPO_CATEGORIA]
 
-    # 2. ENRIQUECER FACTURAS
-    # Soporta tanto 'facturas_agrupadas' (del Ingestor) como 'facturas'
+    # 3. ENRIQUECER FACTURAS
     key_facturas = "facturas_agrupadas" if "facturas_agrupadas" in ventas else "facturas"
 
     for factura in ventas.get(key_facturas, []):
-        # Soporta tanto 'articulos' (del Ingestor) como 'productos'
         key_articulos = "articulos" if "articulos" in factura else "productos"
 
         for producto in factura.get(key_articulos, []):
@@ -95,7 +101,7 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_maestro):
             if info:
                 producto[CAMPO_CATEGORIA] = info[CAMPO_CATEGORIA]
 
-    # 3. ENRIQUECER INVENTARIO
+    # 4. ENRIQUECER INVENTARIO
     for producto in inventario.get("productos", []):
         codigo = str(producto.get("codigo_articulo", "")).strip()
         nombre = str(producto.get("nombre", "")).strip()
@@ -105,9 +111,11 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_maestro):
             producto[CAMPO_CATEGORIA] = info[CAMPO_CATEGORIA]
             producto[CAMPO_DIAS] = info[CAMPO_DIAS]
 
+    # 5. RETORNAR RESULTADOS Y EL CATÁLOGOS UNIFICADO
     return {
         "ventas": ventas,
         "inventario": inventario,
+        "catalogo_actualizado": catalogo_dict,
         "total_errores": len(errores),
         "errores": errores
     }
