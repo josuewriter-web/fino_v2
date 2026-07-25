@@ -32,7 +32,8 @@ class PayloadCatalogador(BaseModel):
 class PayloadEnriquecedor(BaseModel):
     ventas: Dict[str, Any]
     inventario: Dict[str, Any]
-    catalogo_maestro: Union[Dict[str, Any], List[Any]]
+    catalogo_memoria: Optional[Union[Dict[str, Any], List[Any]]] = None
+    catalogo_nuevos: Optional[Union[Dict[str, Any], List[Any]]] = None
 
 class PayloadControlInventario(BaseModel):
     inventario: Dict[str, Any]
@@ -88,9 +89,10 @@ async def endpoint_catalogador(payload: PayloadCatalogador):
 @app.post("/enriquecedor")
 async def endpoint_enriquecedor(payload: PayloadEnriquecedor):
     return ejecutar_enriquecedor(
-        payload.ventas,
-        payload.inventario,
-        payload.catalogo_maestro
+        ventas=payload.ventas,
+        inventario=payload.inventario,
+        catalogo_memoria=payload.catalogo_memoria,
+        catalogo_nuevos=payload.catalogo_nuevos
     )
 
 # Endpoint 5: Control de Inventario
