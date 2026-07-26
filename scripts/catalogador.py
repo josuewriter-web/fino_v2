@@ -1,5 +1,4 @@
 import json
-import ast
 
 # ==========================================
 # FUNCIONES AUXILIARES
@@ -7,72 +6,24 @@ import ast
 
 def normalizar_catalogo(catalogo):
     """
-    Convierte el catálogo a diccionario.
-    Prueba varias formas de lectura para que el texto de Make no rompa el código.
+    Convierte el catálogo a diccionario indexado por codigo_articulo.
+    Soporta dict, list, str (texto plano de JSON) o None/vacío.
     """
     if not catalogo:
         return {}
 
-    data = None
-
-    # Si ya es un diccionario o lista
-    if isinstance(catalogo, (dict, list)):
-        data = catalogo
-
-    # Si viene como texto plano desde Make
-    elif isinstance(catalogo, str):
-        catalogo = catalogo.strip()
-        if not catalogo:
+    # Si llega como texto plano desde Make, lo convierte a JSON
+    if isinstance(catalogo, str):
+        try:
+            catalogo = json.loads(catalogo)
+        except Exception:
             return {}
 
-        # Intento 1: JSON normal ignorando saltos de línea
-        try:
-            data = json.loads(catalogo, strict=False)
-        except Exception:
-            # Intento 2: Formato de comillas simples de Python
-            try:
-                data = ast.literal_eval(catalogo)
-            except Exception:
-                # Intento 3: Limpiar comillas dañadas
-                try:
-                    limpio = catalogo.replace('\\"', '"').replace("'", '"')
-                    data = json.loads(limpio, strict=False)
-                except Exception as err:
-                    print(f"Error leyendo el catálogo: {err}")
-                    return {}
-    else:
-        return {}
-
-    # Si viene dentro de una clave contenedora
-    if isinstance(data, dict):
-        if "catalogo_actualizado" in data and isinstance(data["catalogo_actualizado"], (dict, list)):
-            data = data["catalogo_actualizado"]
-        elif "catalogo_maestro" in data and isinstance(data["catalogo_maestro"], (dict, list)):
-            data = data["catalogo_maestro"]
-
-    res = {}
-
-    # Si es una lista
-    if isinstance(data, list):
-        for item in data:
-            if isinstance(item, dict):
-                codigo = str(item.get("codigo_articulo", "")).strip()
-                if codigo:
-                    res[codigo] = item
-
-    # Si es un diccionario
-    elif isinstance(data, dict):
-        for k, v in data.items():
-            if isinstance(v, dict):
-                codigo_interno = str(v.get("codigo_articulo", "")).strip()
-                if codigo_interno:
-                    res[codigo_interno] = v
-                else:
-                    res[str(k).strip()] = v
-            else:
-                res[str(k).strip()] = v
-
-    return res
+    if isinstance(catalogo, list):
+        return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo}
+    elif isinstance(catalogo, dict):
+        return {str(k).strip(): v for k, v in catalogo.items()}
+    return {}
 
 
 def extraer_skus_ventas(ventas):
