@@ -1,4 +1,5 @@
 import json
+import ast
 
 # ==========================================
 # FUNCIONES AUXILIARES
@@ -6,47 +7,63 @@ import json
 
 def normalizar_catalogo(catalogo):
     """
-    Convierte el catálogo a diccionario indexado por codigo_articulo.
-    Maneja textos dobles de Make, listas y diccionarios anidados.
+    Convierte el catálogo a diccionario.
+    Prueba varias formas de lectura para que el texto de Make no rompa el código.
     """
     if not catalogo:
         return {}
 
-    # 1. Si Make envía un JSON envuelto en comillas múltiples, lo desempaqueta del todo
-    while isinstance(catalogo, str):
+    data = None
+
+    # Si ya es un diccionario o lista
+    if isinstance(catalogo, (dict, list)):
+        data = catalogo
+
+    # Si viene como texto plano desde Make
+    elif isinstance(catalogo, str):
         catalogo = catalogo.strip()
         if not catalogo:
             return {}
-        try:
-            catalogo = json.loads(catalogo)
-        except Exception:
-            return {}
 
-    if not isinstance(catalogo, (dict, list)):
+        # Intento 1: JSON normal ignorando saltos de línea
+        try:
+            data = json.loads(catalogo, strict=False)
+        except Exception:
+            # Intento 2: Formato de comillas simples de Python
+            try:
+                data = ast.literal_eval(catalogo)
+            except Exception:
+                # Intento 3: Limpiar comillas dañadas
+                try:
+                    limpio = catalogo.replace('\\"', '"').replace("'", '"')
+                    data = json.loads(limpio, strict=False)
+                except Exception as err:
+                    print(f"Error leyendo el catálogo: {err}")
+                    return {}
+    else:
         return {}
 
-    # 2. Si viene dentro de una clave contenedora
-    if isinstance(catalogo, dict):
-        if "catalogo_actualizado" in catalogo and isinstance(catalogo["catalogo_actualizado"], (dict, list)):
-            catalogo = catalogo["catalogo_actualizado"]
-        elif "catalogo_maestro" in catalogo and isinstance(catalogo["catalogo_maestro"], (dict, list)):
-            catalogo = catalogo["catalogo_maestro"]
+    # Si viene dentro de una clave contenedora
+    if isinstance(data, dict):
+        if "catalogo_actualizado" in data and isinstance(data["catalogo_actualizado"], (dict, list)):
+            data = data["catalogo_actualizado"]
+        elif "catalogo_maestro" in data and isinstance(data["catalogo_maestro"], (dict, list)):
+            data = data["catalogo_maestro"]
 
     res = {}
 
-    # 3. Si es una lista
-    if isinstance(catalogo, list):
-        for item in catalogo:
+    # Si es una lista
+    if isinstance(data, list):
+        for item in data:
             if isinstance(item, dict):
                 codigo = str(item.get("codigo_articulo", "")).strip()
                 if codigo:
                     res[codigo] = item
 
-    # 4. Si es un diccionario
-    elif isinstance(catalogo, dict):
-        for k, v in catalogo.items():
+    # Si es un diccionario
+    elif isinstance(data, dict):
+        for k, v in data.items():
             if isinstance(v, dict):
-                # Extrae el código interno o usa la clave ('MAS-001')
                 codigo_interno = str(v.get("codigo_articulo", "")).strip()
                 if codigo_interno:
                     res[codigo_interno] = v
@@ -101,7 +118,6 @@ def unir_skus(*listas):
 
 def detectar_nuevos(skus_detectados, catalogo):
     nuevos = []
-    
     catalogo_dict = normalizar_catalogo(catalogo)
 
     for codigo, datos in skus_detectados.items():
