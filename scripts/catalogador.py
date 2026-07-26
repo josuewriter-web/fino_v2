@@ -7,23 +7,55 @@ import json
 def normalizar_catalogo(catalogo):
     """
     Convierte el catálogo a diccionario indexado por codigo_articulo.
-    Soporta dict, list, str (texto plano de JSON) o None/vacío.
+    Maneja textos dobles de Make, listas y diccionarios anidados.
     """
     if not catalogo:
         return {}
 
-    # Si llega texto plano desde el Data Store de Make, lo convierte a JSON
-    if isinstance(catalogo, str):
+    # 1. Si Make envía un JSON envuelto en comillas múltiples, lo desempaqueta del todo
+    while isinstance(catalogo, str):
+        catalogo = catalogo.strip()
+        if not catalogo:
+            return {}
         try:
             catalogo = json.loads(catalogo)
         except Exception:
             return {}
 
+    if not isinstance(catalogo, (dict, list)):
+        return {}
+
+    # 2. Si viene dentro de una clave contenedora
+    if isinstance(catalogo, dict):
+        if "catalogo_actualizado" in catalogo and isinstance(catalogo["catalogo_actualizado"], (dict, list)):
+            catalogo = catalogo["catalogo_actualizado"]
+        elif "catalogo_maestro" in catalogo and isinstance(catalogo["catalogo_maestro"], (dict, list)):
+            catalogo = catalogo["catalogo_maestro"]
+
+    res = {}
+
+    # 3. Si es una lista
     if isinstance(catalogo, list):
-        return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo}
+        for item in catalogo:
+            if isinstance(item, dict):
+                codigo = str(item.get("codigo_articulo", "")).strip()
+                if codigo:
+                    res[codigo] = item
+
+    # 4. Si es un diccionario
     elif isinstance(catalogo, dict):
-        return {str(k).strip(): v for k, v in catalogo.items()}
-    return {}
+        for k, v in catalogo.items():
+            if isinstance(v, dict):
+                # Extrae el código interno o usa la clave ('MAS-001')
+                codigo_interno = str(v.get("codigo_articulo", "")).strip()
+                if codigo_interno:
+                    res[codigo_interno] = v
+                else:
+                    res[str(k).strip()] = v
+            else:
+                res[str(k).strip()] = v
+
+    return res
 
 
 def extraer_skus_ventas(ventas):
@@ -70,7 +102,6 @@ def unir_skus(*listas):
 def detectar_nuevos(skus_detectados, catalogo):
     nuevos = []
     
-    # Convierte la memoria a diccionario, sin importar si viene como texto, lista o dict
     catalogo_dict = normalizar_catalogo(catalogo)
 
     for codigo, datos in skus_detectados.items():
