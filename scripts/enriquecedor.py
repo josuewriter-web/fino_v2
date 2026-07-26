@@ -1,3 +1,5 @@
+import json
+
 CAMPO_CATEGORIA = "categoria"
 CAMPO_DIAS = "dias_maximos"
 
@@ -17,10 +19,18 @@ def registrar_error(lista_errores, codigo, nombre, motivo):
 def normalizar_catalogo(catalogo):
     """
     Convierte el catálogo a diccionario indexado por codigo_articulo.
-    Soporta formatos dict, list o None/vacío.
+    Soporta dict, list, str (texto plano de JSON) o None/vacío.
     """
     if not catalogo:
         return {}
+
+    # Si llega texto plano desde el Data Store de Make, lo convierte a JSON
+    if isinstance(catalogo, str):
+        try:
+            catalogo = json.loads(catalogo)
+        except Exception:
+            return {}
+
     if isinstance(catalogo, list):
         return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo}
     elif isinstance(catalogo, dict):
@@ -67,7 +77,7 @@ def obtener_info_catalogo(codigo, nombre, catalogo_dict, errores):
 
 def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nuevos=None):
     # 1. UNIR CATÁLOGOS
-    # normalizar_catalogo maneja valores None devueltos si la variable no existe
+    # normalizar_catalogo convierte texto plano a JSON si viene del Data Store
     dict_memoria = normalizar_catalogo(catalogo_memoria)
     dict_nuevos = normalizar_catalogo(catalogo_nuevos)
     
@@ -111,7 +121,7 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nu
             producto[CAMPO_CATEGORIA] = info[CAMPO_CATEGORIA]
             producto[CAMPO_DIAS] = info[CAMPO_DIAS]
 
-    # 5. RETORNAR RESULTADOS Y EL CATÁLOGOS UNIFICADO
+    # 5. RETORNAR RESULTADOS Y EL CATÁLOGO UNIFICADO
     return {
         "ventas": ventas,
         "inventario": inventario,
