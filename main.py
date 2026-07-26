@@ -27,18 +27,18 @@ def cambiar_emojis_por_fotos(texto_html: str) -> str:
 class PayloadCatalogador(BaseModel):
     ventas: Dict[str, Any]
     inventario: Dict[str, Any]
-    catalogo_maestro: Optional[Union[Dict[str, Any], List[Any]]] = {}
+    catalogo_maestro: Optional[Union[Dict[str, Any], List[Any], str]] = {}
 
 class PayloadEnriquecedor(BaseModel):
     ventas: Dict[str, Any]
     inventario: Dict[str, Any]
-    catalogo_memoria: Optional[Union[Dict[str, Any], List[Any]]] = None
-    catalogo_nuevos: Optional[Union[Dict[str, Any], List[Any]]] = None
+    catalogo_memoria: Optional[Union[Dict[str, Any], List[Any], str]] = None
+    catalogo_nuevos: Optional[Union[Dict[str, Any], List[Any], str]] = None
 
 class PayloadControlInventario(BaseModel):
     inventario: Dict[str, Any]
     ventas: Dict[str, Any]
-    memoria: Optional[Dict[str, Any]] = {}
+    memoria: Optional[Union[Dict[str, Any], str]] = {}
 
 class PayloadMotorFinanciero(BaseModel):
     inventario_actualizado: Dict[str, Any]
