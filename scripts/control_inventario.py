@@ -1,4 +1,51 @@
+import json
 from datetime import datetime
+
+# ==========================================
+# FUNCIONES AUXILIARES
+# ==========================================
+
+def normalizar_memoria(memoria):
+    """
+    Convierte la memoria a un diccionario manipulable.
+    Maneja texto plano, JSONs anidados, listas y wrappers de Make.
+    """
+    if not memoria:
+        return {}
+
+    # Desempaqueta texto plano o doblemente codificado
+    while isinstance(memoria, str):
+        memoria = memoria.strip()
+        if not memoria:
+            return {}
+        try:
+            memoria = json.loads(memoria)
+        except Exception:
+            return {}
+
+    if not isinstance(memoria, (dict, list)):
+        return {}
+
+    # Si viene envuelto en la respuesta previa del script
+    if isinstance(memoria, dict):
+        if "inventario_actualizado" in memoria and isinstance(memoria["inventario_actualizado"], (dict, list)):
+            memoria = memoria["inventario_actualizado"]
+        elif "memoria" in memoria and isinstance(memoria["memoria"], (dict, list)):
+            memoria = memoria["memoria"]
+
+    # Si viene como lista, lo indexa por codigo_articulo
+    if isinstance(memoria, list):
+        res = {}
+        for item in memoria:
+            if isinstance(item, dict):
+                codigo = str(item.get("codigo_articulo", "")).strip()
+                if codigo:
+                    res[codigo] = item
+        return res
+
+    # Si ya es un diccionario
+    return memoria
+
 
 def aplicar_fifo(lotes, cantidad_a_descontar):
     lotes.sort(key=lambda x: x.get("edad", 0), reverse=True)
@@ -16,12 +63,17 @@ def aplicar_fifo(lotes, cantidad_a_descontar):
             
     return [lote for lote in lotes if lote["cantidad"] > 0]
 
+
+# ==========================================
+# FUNCIÓN PRINCIPAL
+# ==========================================
+
 def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
     FECHA_HOY = datetime.today().strftime("%Y-%m-%d")
     TIMESTAMP = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-    if memoria is None:
-        memoria = {}
+    # 0. Normalizar memoria recibida (texto o dict)
+    memoria = normalizar_memoria(memoria)
 
     # 1. Calcular ventas de hoy
     ventas_consolidadas = {}
