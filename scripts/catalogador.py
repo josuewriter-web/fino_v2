@@ -1,6 +1,30 @@
+import json
+
 # ==========================================
 # FUNCIONES AUXILIARES
 # ==========================================
+
+def normalizar_catalogo(catalogo):
+    """
+    Convierte el catálogo a diccionario indexado por codigo_articulo.
+    Soporta dict, list, str (texto plano de JSON) o None/vacío.
+    """
+    if not catalogo:
+        return {}
+
+    # Si llega texto plano desde el Data Store de Make, lo convierte a JSON
+    if isinstance(catalogo, str):
+        try:
+            catalogo = json.loads(catalogo)
+        except Exception:
+            return {}
+
+    if isinstance(catalogo, list):
+        return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo}
+    elif isinstance(catalogo, dict):
+        return {str(k).strip(): v for k, v in catalogo.items()}
+    return {}
+
 
 def extraer_skus_ventas(ventas):
     resultado = {}
@@ -46,13 +70,8 @@ def unir_skus(*listas):
 def detectar_nuevos(skus_detectados, catalogo):
     nuevos = []
     
-    # Si el catálogo viene como lista desde Make/DB, lo normalizamos a dict
-    if isinstance(catalogo, list):
-        catalogo_dict = {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo}
-    elif isinstance(catalogo, dict):
-        catalogo_dict = catalogo
-    else:
-        catalogo_dict = {}
+    # Convierte la memoria a diccionario, sin importar si viene como texto, lista o dict
+    catalogo_dict = normalizar_catalogo(catalogo)
 
     for codigo, datos in skus_detectados.items():
         if codigo not in catalogo_dict:
