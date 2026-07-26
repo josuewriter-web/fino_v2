@@ -83,6 +83,7 @@ async def endpoint_catalogador(payload: PayloadCatalogador):
     return ejecutar_catalogador(
         payload.ventas,
         payload.inventario,
+        payload.catalogo_maestro
     )
 
 # Endpoint 4: Enriquecedor
