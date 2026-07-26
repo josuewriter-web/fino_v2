@@ -2,8 +2,29 @@ import json
 from datetime import datetime
 
 # ==========================================================
-# FUNCIONES AUXILIARES
+# FUNCIONES AUXILIARES DE NORMALIZACIÓN
 # ==========================================================
+def normalizar_dict(dato):
+    """
+    Convierte texto plano (JSON en string) o diccionarios a un dict de Python.
+    """
+    if not dato:
+        return {}
+    
+    while isinstance(dato, str):
+        dato = dato.strip()
+        if not dato:
+            return {}
+        try:
+            dato = json.loads(dato)
+        except Exception:
+            return {}
+            
+    if isinstance(dato, dict):
+        return dato
+    return {}
+
+
 def mapear_kpis_estrategicos(kpis_brutos: dict) -> dict:
     """
     Traduce las llaves crudas de los diccionarios a las 10 llaves limpias 
@@ -180,11 +201,20 @@ def avanzar_fase(estado: dict, fase_key: str, fecha_hoy: str):
 # FUNCIÓN PRINCIPAL DE EJECUCIÓN (ENTRY POINT)
 # ==========================================================
 def ejecutar_motor_estado(
-    estado: dict, 
-    kpis_financieros: dict, 
-    kpis_inventario: dict, 
+    estado, 
+    kpis_financieros, 
+    kpis_inventario, 
     fecha: str = None
 ) -> dict:
+
+    # Normalizar entradas
+    estado = normalizar_dict(estado)
+    kpis_financieros = normalizar_dict(kpis_financieros)
+    kpis_inventario = normalizar_dict(kpis_inventario)
+
+    # Desempaquetar estado si viene envuelto
+    if "estado" in estado and isinstance(estado["estado"], dict) and "perfil_negocio" in estado["estado"]:
+        estado = estado["estado"]
 
     fecha_hoy = fecha if fecha else datetime.today().strftime("%Y-%m-%d")
 
