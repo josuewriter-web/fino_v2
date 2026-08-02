@@ -257,7 +257,7 @@
         .no-problems-title { font-size: 16px; font-weight: 700; color: #15803d; text-transform: uppercase; margin-bottom: 6px; display: block; }
         .no-problems-text { font-size: 14px; color: #14532d; margin: 0; line-height: 1.4; }
 
-        /* Sección de Evolución (Roadmap 4 Fases) */
+        /* Sección de Evolución (Roadmap) */
         .evolution-desc-text { font-size: 14px; color: #475569; line-height: 1.35; margin-top: -2px; margin-bottom: 12px; }
         .evolution-wrapper { margin-top: 4px; }
         .evo-card-linear { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; width: 100%; display: block; page-break-inside: avoid; }
@@ -520,6 +520,34 @@
         <p class="evolution-desc-text"></p>
         
         <div class="evolution-wrapper">
+            <!-- FASE 0 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 00</div>
+                    <div class="evo-title">Línea Base</div>
+                    <p class="evo-desc">Recolección de datos iniciales y estabilización de la información del negocio.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_0_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_X_nombre]:</span> 
+                            <span class="evo-meta-val">[meta_X_valores]</span> 
+                            <span class="evo-meta-ok">[meta_X_check]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_0_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_0_clase_barra]" style="width: [fase_0_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_0_color_texto];">[fase_0_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_0_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_0_ACTIVA] -->
+                </div>
+            </div>
+
             <!-- FASE 1 -->
             <div class="evo-card-linear">
                 <div class="evo-left-content">
