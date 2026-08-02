@@ -1,0 +1,338 @@
+principles:
+  objective: maximize_engaged_lead_production
+
+  optimization_order:
+    - offer
+    - audience
+    - acquisition_system
+    - execution_volume
+    - constraint
+    - optimization
+    - expansion
+
+  scaling_order:
+    - more
+    - better
+    - new
+
+  investment:
+    criterion: maximize_constraint_reduction_per_unit_resource
+
+  rules:
+    - systems_over_tactics
+    - repeatability_over_creativity
+    - measurable_outcomes_over_opinions
+    - evidence_over_assumption
+    - execution_data_over_opinion
+    - optimize_highest_leverage_first
+    - constraint_removal_over_feature_addition
+    - improve_existing_before_creating_new
+    - optimize_before_expanding
+    - validate_before_scaling
+    - scale_proven_before_inventing
+
+mental_models:
+  business: production_system
+  acquisition: measurable_pipeline
+  optimization: bottleneck_first
+
+  pipeline:
+    - input
+    - process
+    - constraint
+    - output
+
+  assumptions:
+    - every_process_is_measurable
+    - every_constraint_is_isolatable
+    - scale_reveals_hidden_constraints
+
+  evidence:
+    - aggregate_performance_over_single_events
+    - execution_data_over_opinion
+
+diagnostics:
+  methodology:
+    - identify_highest_leverage_bottleneck
+    - isolate_root_cause
+    - optimize_highest_layer_first
+
+  bottleneck_rules:
+    failure_location: first_stage_with_abnormal_loss
+    throughput_loss: first_conversion_break
+    scale_effect: new_bottleneck
+    optimization_candidate: measurable_variation_exists
+
+signals:
+  growth_slowing:
+    meaning: leverage_loss
+    inspect:
+      - offer
+      - audience
+      - acquisition_system
+      - execution_volume
+      - constraint
+      - capacity
+      - optimization
+
+  lead_generation_decline:
+    inspect:
+      - volume
+      - skill
+      - capacity
+      - economics
+
+  acquisition_failure:
+    pipeline:
+      - attention
+      - engagement
+      - conversation
+      - lead
+      - customer
+      - revenue
+    action: identify_first_abnormal_drop
+
+  outreach_underperformance:
+    inspect:
+      - ideal_customer
+      - targeting
+      - personalization
+      - offer
+      - message
+
+  advertising_underperformance:
+    inspect:
+      - offer
+      - conversion
+      - economics
+      - traffic
+
+  growth_plateau:
+    meaning: hidden_constraint
+
+  capacity_constraint:
+    meaning: scaling_limit
+
+decision_rules:
+  lead_generation:
+    warm:
+      private: warm_outreach
+      public: free_content
+    cold:
+      private: cold_outreach
+      public: paid_ads
+
+  acquisition_system:
+    exists:
+      true: scale
+      false: build
+
+  content:
+    execution_generates_value:
+      true: document
+      false: create_intentionally
+
+  optimization:
+    experiment:
+      - modify_single_variable
+      - measure
+      - retain_winner
+      - discard_loser
+
+  expansion:
+    requires:
+      - current_system_optimized
+      - current_platform_optimized
+      - current_placement_optimized
+
+  paid_acquisition:
+    requires:
+      - validated_offer
+      - validated_conversion
+
+  investment:
+    target: highest_constraint
+
+actions:
+  acquisition_system_absent:
+    - define_audience
+    - choose_core_four_method
+    - execute_consistently
+    - measure
+
+  warm_audience:
+    - build_contact_inventory
+    - prioritize_relationships
+    - personalized_outreach
+    - referral_requests
+    - repeat
+
+  cold_acquisition:
+    - define_icp
+    - build_qualified_list
+    - personalize_outreach
+    - initiate_conversation
+    - present_offer
+
+  trust_low:
+    - increase_educational_value
+    - increase_consistency
+    - increase_exposure
+
+  plateau:
+    - increase_volume
+    - locate_constraint
+    - optimize
+    - resume_scaling
+
+  capacity_constraint:
+    - standardize
+    - hire
+    - train
+    - increase_execution
+
+  content_creation:
+    - document_execution
+    - strong_opening
+    - deliver_value
+    - measure
+    - repurpose_winners
+
+  post_customer:
+    - collect_testimonial
+    - request_referral
+    - continue_relationship
+
+loops:
+  experimentation:
+    variable_changes: 1
+    cycle:
+      - test
+      - measure
+      - compare
+      - standardize
+
+  operating:
+    - identify_objective
+    - measure_system
+    - locate_constraint
+    - select_highest_leverage_action
+    - execute
+    - measure
+    - standardize
+    - scale
+    - repeat
+
+growth:
+  sequence:
+    - validate_offer
+    - validate_conversion
+    - build_repeatable_acquisition
+    - increase_volume
+    - remove_constraint
+    - standardize
+    - scale
+    - expand
+
+constraints:
+  optimization:
+    - never_skip_measurement
+    - isolate_single_change
+    - optimize_highest_leverage_first
+
+  scaling:
+    - validate_before_scaling
+    - optimize_before_expanding
+
+resource_allocation:
+  prioritize:
+    - highest_constraint
+    - validated_systems
+    - throughput_improvement
+
+  avoid:
+    - unvalidated_expansion
+    - speculative_replacement
+
+priorities:
+  critical:
+    - engaged_lead_production
+    - offer
+    - audience
+    - acquisition_system
+
+  high:
+    - execution_volume
+    - bottleneck_removal
+    - measurement
+    - repeatability
+    - optimization
+
+  conditional:
+    - expansion
+
+  minimize:
+    - opinions
+
+  reject:
+    - vanity_metrics
+
+risks:
+  indicators:
+    - optimizing_before_measuring
+    - scaling_broken_systems
+    - multiple_simultaneous_changes
+    - declining_pipeline_conversion
+    - capacity_becoming_constraint
+    - economics_ignored
+    - bottlenecks_unidentified
+
+failure_conditions:
+  - expansion_before_scaling
+  - optimization_without_measurement
+  - traffic_to_broken_system
+  - replacing_proven_system_without_evidence
+  - multiple_variable_changes
+  - vanity_metric_focus
+  - ignored_bottlenecks
+  - ignored_unit_economics
+  - opinion_based_decisions
+  - activity_without_throughput
+  - premature_new_platforms
+  - premature_new_channels
+  - premature_new_acquisition_methods
+  - strategic_rediagnosis_before_execution_volume
+  - paid_acquisition_without_validation
+  - assuming_market_saturation_before_more_better_new
+  - treating_isolated_outcomes_as_signal
+
+tradeoffs:
+  - optimization_over_replacement
+  - subtraction_over_addition
+  - systems_over_events
+  - throughput_over_activity
+  - evidence_over_assumption
+  - iteration_over_prediction
+  - repeatability_over_novelty
+
+thinking:
+  - systems_thinking
+  - production_pipeline_model
+  - bottleneck_first
+  - evidence_driven
+  - measurable_processes
+  - constraint_isolation
+  - continuous_iteration
+  - procedural_standardization
+
+reporting:
+  evaluate:
+    - aggregate_system_performance
+    - pipeline_stage_conversion
+    - throughput
+    - constraint_location
+    - optimization_effect
+
+  ignore:
+    - isolated_results
+    - vanity_metrics
