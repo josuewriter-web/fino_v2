@@ -2,29 +2,8 @@ import json
 from datetime import datetime
 
 # ==========================================================
-# FUNCIONES AUXILIARES DE NORMALIZACIÓN
+# FUNCIONES AUXILIARES
 # ==========================================================
-def normalizar_dict(dato):
-    """
-    Convierte texto plano (JSON en string) o diccionarios a un dict de Python.
-    """
-    if not dato:
-        return {}
-    
-    while isinstance(dato, str):
-        dato = dato.strip()
-        if not dato:
-            return {}
-        try:
-            dato = json.loads(dato)
-        except Exception:
-            return {}
-            
-    if isinstance(dato, dict):
-        return dato
-    return {}
-
-
 def mapear_kpis_estrategicos(kpis_brutos: dict) -> dict:
     """
     Traduce las llaves crudas de los diccionarios a las 10 llaves limpias 
@@ -56,10 +35,8 @@ def actualizar_objetivos_estrategicos(estado: dict, kpis_mapeados: dict, fecha_h
 
     for clave, valor_actual in kpis_mapeados.items():
         if clave in objetivos:
-            # 1. Actualizar el valor actual
             objetivos[clave]["actual"] = valor_actual
 
-            # 2. Extraer datos para calcular progreso
             inicial = objetivos[clave].get("inicial", 0)
             objetivo_meta = objetivos[clave].get("objetivo", 0)
 
@@ -83,6 +60,72 @@ def actualizar_objetivos_estrategicos(estado: dict, kpis_mapeados: dict, fecha_h
         objetivos["avance_global"] = round(suma_avances / total_metricas, 2)
 
     objetivos["ultima_actualizacion"] = fecha_hoy
+
+
+def procesar_observacion(estado: dict, fecha_hoy: str) -> bool:
+    """
+    Maneja la Fase 0 (Fase de Observación de 7 días).
+    Retorna True si la Observación está activa hoy.
+    Retorna False si la Observación terminó o no aplica.
+    """
+    perfil = estado["perfil_negocio"]
+    obs = perfil.get("observacion", perfil.get("diagnostico", {}))
+    estado_act = perfil["estado_actual"]
+
+    # Si no está en observación y la fase no es 0, continuamos con el flujo normal
+    if not obs.get("activo", False) and estado_act.get("fase") != 0:
+        return False
+
+    if not obs.get("fecha_inicio"):
+        obs["fecha_inicio"] = fecha_hoy
+
+    dia_actual = obs.get("dia_actual", 1)
+    duracion = obs.get("duracion_dias", 7)
+
+    # Cuando termina el periodo de observación (Día 8 en adelante)
+    if dia_actual > duracion or obs.get("completado", False):
+        obs["activo"] = False
+        obs["completado"] = True
+
+        # Transición oficial a Fase 1
+        fase_1 = perfil["roadmap"]["fase_1"]
+        estado_act["fase"] = 1
+        estado_act["etapa"] = "Roadmap Oficial"
+        estado_act["nombre_fase"] = fase_1["nombre"]
+        estado_act["fecha_inicio"] = fecha_hoy
+        estado_act["fecha_inicio_roadmap"] = fecha_hoy
+        estado_act["dias_en_fase"] = 0  # Se incrementa a 1 en el flujo principal
+        estado_act["progreso"] = 0
+        estado_act["dias_estabilidad"] = 0
+        estado_act["estado"] = "En progreso"
+
+        # Registrar Fase 0 en el historial
+        perfil["historial_fases"].append({
+            "fase": 0,
+            "nombre": "Fase de Observación",
+            "fecha_inicio": obs["fecha_inicio"],
+            "fecha_fin": fecha_hoy,
+            "duracion_dias": duracion,
+            "porcentaje_final": 100.0
+        })
+        return False  # Pasa a la evaluación regular de la Fase 1
+
+    # Mientras se mantenga en los 7 días de observación
+    progreso_calculado = round((dia_actual / duracion) * 100, 2)
+
+    estado_act["fase"] = 0
+    estado_act["etapa"] = "Fase de Observación"
+    estado_act["nombre_fase"] = "Fase de Observación"
+    estado_act["estado"] = "En progreso"
+    estado_act["progreso"] = progreso_calculado
+    estado_act["dias_en_fase"] = dia_actual
+
+    # Preparar el día siguiente
+    obs["dia_actual"] += 1
+    if obs["dia_actual"] > duracion:
+        obs["completado"] = True
+
+    return True
 
 
 def evaluar_fase_actual(estado: dict, kpis_mapeados: dict):
@@ -201,34 +244,41 @@ def avanzar_fase(estado: dict, fase_key: str, fecha_hoy: str):
 # FUNCIÓN PRINCIPAL DE EJECUCIÓN (ENTRY POINT)
 # ==========================================================
 def ejecutar_motor_estado(
-    estado, 
-    kpis_financieros, 
-    kpis_inventario, 
+    estado: dict, 
+    kpis_financieros: dict, 
+    kpis_inventario: dict, 
     fecha: str = None
 ) -> dict:
 
-    # Normalizar entradas
-    estado = normalizar_dict(estado)
-    kpis_financieros = normalizar_dict(kpis_financieros)
-    kpis_inventario = normalizar_dict(kpis_inventario)
-
-    # Desempaquetar estado si viene envuelto
-    if "estado" in estado and isinstance(estado["estado"], dict) and "perfil_negocio" in estado["estado"]:
-        estado = estado["estado"]
-
     fecha_hoy = fecha if fecha else datetime.today().strftime("%Y-%m-%d")
 
-    # Extraer KPIs financieros en caso de que vengan anidados
+    # Extraer KPIs financieros anidados
     kpis_fin = kpis_financieros.get("kpis_financieros", kpis_financieros)
     kpis_totales_brutos = {**kpis_fin, **kpis_inventario}
     kpis_mapeados = mapear_kpis_estrategicos(kpis_totales_brutos)
 
+    # 1. Actualizar objetivos estratégicos
+    actualizar_objetivos_estrategicos(estado, kpis_mapeados, fecha_hoy)
+
+    # 2. Controlar Fase de Observación (Fase 0)
+    en_observacion = procesar_observacion(estado, fecha_hoy)
+
+    if en_observacion:
+        dia_actual = estado["perfil_negocio"]["estado_actual"]["dias_en_fase"]
+        estado["perfil_negocio"]["ultima_evaluacion"] = {
+            "fecha": fecha_hoy,
+            "resultado": f"Observación en progreso (Día {dia_actual}/7)",
+            "criterios_cumplidos": [],
+            "criterios_pendientes": []
+        }
+        return estado
+
+    # 3. Flujo para Fases del Roadmap (1 a 4)
     estado_actual = estado["perfil_negocio"]["estado_actual"]
     if not estado_actual.get("fecha_inicio"):
         estado_actual["fecha_inicio"] = fecha_hoy
-    estado_actual["dias_en_fase"] += 1
 
-    actualizar_objetivos_estrategicos(estado, kpis_mapeados, fecha_hoy)
+    estado_actual["dias_en_fase"] += 1
 
     fase_num = estado_actual["fase"]
     fase_key = f"fase_{fase_num}"
