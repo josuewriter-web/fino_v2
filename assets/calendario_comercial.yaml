@@ -1,0 +1,55 @@
+CALENDARIO_COMERCIAL_VENEZUELA_2026:
+
+  ENERO:
+    - 01/01: Año Nuevo (Feriado no laborable)
+    - 06/01: Día de Reyes
+    - Periodo: 01/01 al 07/01 (Arranque de año, ventas bajas)
+
+  FEBRERO:
+    - 16/02: Lunes de Carnaval (Feriado)
+    - 17/02: Martes de Carnaval (Feriado)
+
+  MARZO:
+    - 19/03: Día de San José
+
+  ABRIL:
+    - 02/04: Jueves Santo (Feriado)
+    - 03/04: Viernes Santo (Feriado)
+    - 19/04: Firma del Acta de Independencia (Feriado)
+
+  MAYO:
+    - 01/05: Día del Trabajador (Feriado)
+    - 10/05 (2do domingo): Día de la Madre (Pico comercial alto)
+
+  JUNIO:
+    - 21/06 (3er domingo): Día del Padre (Pico comercial medio)
+    - 24/06: Batalla de Carabobo (Feriado)
+
+  JULIO:
+    - 05/07: Día de la Independencia (Feriado)
+    - 19/07 (3er domingo): Día del Niño (Pico comercial alto)
+    - 24/07: Natalicio de Simón Bolívar (Feriado)
+
+  AGOSTO:
+    - 15/08: Día de la Asunción
+    - Periodo: Agosto/Septiembre (Temporada de regreso a clases)
+
+  SEPTIEMBRE:
+    - 11/09: Día de la Virgen de Coromoto
+
+  OCTUBRE:
+    - 12/10: Día de la Resistencia Indígena (Feriado)
+
+  NOVIEMBRE:
+    - 01/11: Día de Todos los Santos
+    - 27/11 (Último viernes): Black Friday (Pico comercial muy alto)
+
+  DICIEMBRE:
+    - 08/12: Inmaculada Concepción
+    - 24/12: Nochebuena (Pico comercial)
+    - 25/12: Navidad (Feriado)
+    - 31/12: Nochevieja (Pico comercial)
+
+  REGLAS_DE_PAGO_RECURRENTES:
+    - Quincena: Días 14, 15 y 16 de cada mes (Aumento de ventas)
+    - Fin de mes: Días 28 al 02 de cada mes (Aumento de ventas)
