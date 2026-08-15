@@ -129,6 +129,7 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
     skus_vencidos_count = 0
     skus_con_entrada_count = 0
     skus_con_merma_count = 0
+    skus_sin_venta_hoy = []
 
     # Procesar memoria
     for codigo, datos_memoria in memoria.items():
@@ -166,6 +167,13 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
         
         total_sku_unidades = round(sum(l["cantidad"] for l in lotes), 2)
         total_unidades += total_sku_unidades
+
+        # Registrar SKUs que tienen stock pero no vendieron hoy
+        if ventas_sku == 0 and total_sku_unidades > 0:
+            skus_sin_venta_hoy.append({
+                "codigo_articulo": codigo,
+                "nombre": nombre_sku
+            })
         
         # Reordenar diccionario de la memoria
         nombre = datos_memoria.get("nombre", "")
@@ -247,6 +255,8 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
         "cantidad_skus_con_entrada": skus_con_entrada_count,
         "mermas_detectadas_unidades": round(total_mermas_dia, 2),
         "cantidad_skus_con_merma": skus_con_merma_count,
+        "cantidad_skus_sin_venta": len(skus_sin_venta_hoy),
+        "skus_sin_venta": skus_sin_venta_hoy,
         "sku_mas_antiguo": sku_mas_antiguo
     }
 
