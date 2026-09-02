@@ -1,9 +1,4 @@
-import os
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Request
-import uvicorn
-
-app = FastAPI()
 
 def calcular_margen(ganancia, ventas):
     if ventas > 0:
@@ -260,36 +255,3 @@ def procesar_semana(dias_json):
         },
         "afinidad_productos": resultado_afinidad
     }
-
-@app.post("/procesar-semana")
-async def webhook_procesar_semana(request: Request):
-    try:
-        payload = await request.json()
-        if not payload:
-            raise HTTPException(status_code=400, detail="Payload JSON no válido o vacío")
-
-        if isinstance(payload, dict) and "dias" in payload:
-            dias_json = payload["dias"]
-        elif isinstance(payload, list):
-            dias_json = payload
-        else:
-            raise HTTPException(status_code=400, detail="Formato inválido. Enviar lista o JSON con clave 'dias'")
-
-        resultado = procesar_semana(dias_json)
-        if "error" in resultado:
-            raise HTTPException(status_code=400, detail=resultado["error"])
-
-        return resultado
-
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=f"Error procesando la solicitud: {str(e)}")
-
-@app.get("/")
-def health_check():
-    return {"status": "ok", "mensaje": "Servidor activo"}
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
