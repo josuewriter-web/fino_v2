@@ -1,19 +1,10 @@
 import json
 from datetime import datetime
 
-# ==========================================
-# FUNCIONES AUXILIARES
-# ==========================================
-
 def normalizar_memoria(memoria):
-    """
-    Convierte la memoria a un diccionario manipulable.
-    Maneja texto plano, JSONs anidados, listas y wrappers de Make.
-    """
     if not memoria:
         return {}
 
-    # Desempaqueta texto plano o doblemente codificado
     while isinstance(memoria, str):
         memoria = memoria.strip()
         if not memoria:
@@ -26,14 +17,12 @@ def normalizar_memoria(memoria):
     if not isinstance(memoria, (dict, list)):
         return {}
 
-    # Si viene envuelto en la respuesta previa del script
     if isinstance(memoria, dict):
         if "inventario_actualizado" in memoria and isinstance(memoria["inventario_actualizado"], (dict, list)):
             memoria = memoria["inventario_actualizado"]
         elif "memoria" in memoria and isinstance(memoria["memoria"], (dict, list)):
             memoria = memoria["memoria"]
 
-    # Si viene como lista, lo indexa por codigo_articulo
     if isinstance(memoria, list):
         res = {}
         for item in memoria:
@@ -43,7 +32,6 @@ def normalizar_memoria(memoria):
                     res[codigo] = item
         return res
 
-    # Si ya es un diccionario
     return memoria
 
 
@@ -64,15 +52,10 @@ def aplicar_fifo(lotes, cantidad_a_descontar):
     return [lote for lote in lotes if lote["cantidad"] > 0]
 
 
-# ==========================================
-# FUNCIÓN PRINCIPAL
-# ==========================================
-
 def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
     FECHA_HOY = datetime.today().strftime("%Y-%m-%d")
     TIMESTAMP = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-    # 0. Normalizar memoria recibida (texto o dict)
     memoria = normalizar_memoria(memoria)
 
     # 1. Calcular ventas de hoy
@@ -82,11 +65,10 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
             codigo = str(prod.get("codigo_articulo")).strip()
             ventas_consolidadas[codigo] = ventas_consolidadas.get(codigo, 0) + prod.get("cantidad", 0)
 
-    # Diccionarios rápidos de inventario de hoy
     inv_fisico = {str(p["codigo_articulo"]).strip(): p.get("existencia_actual", 0) for p in inventario_hoy.get("productos", [])}
     inv_costos = {str(p["codigo_articulo"]).strip(): p.get("costo_unidad_usd", 0.0) for p in inventario_hoy.get("productos", [])}
 
-    # 2. Cargar productos de inventario_hoy a memoria
+    # 2. Cargar productos a memoria
     for prod in inventario_hoy.get("productos", []):
         codigo = str(prod.get("codigo_articulo")).strip()
         
@@ -112,11 +94,11 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
             memoria[codigo]["precio_unitario_usd"] = prod.get("precio_venta_usd", 0.0)
             memoria[codigo]["costo_unitario_usd"] = prod.get("costo_unidad_usd", 0.0)
 
-    # Variables para KPIs
     total_unidades = 0
     total_lotes_global = 0
     total_entradas_dia = 0
     total_mermas_dia = 0
+    total_mermas_usd_dia = 0.0
     suma_edades_unidades = 0
     edad_maxima_global = 0
     unidades_riesgo = 0
@@ -131,13 +113,13 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
     skus_con_merma_count = 0
     skus_sin_venta_hoy = []
 
-    # Procesar memoria
     for codigo, datos_memoria in memoria.items():
         lotes = datos_memoria.get("lotes", [])
         dias_max = datos_memoria.get("dias_maximos", 180)
         nombre_sku = datos_memoria.get("nombre", "")
         
         costo_sku = inv_costos.get(codigo, datos_memoria.get("costo_unitario_usd", 0.0))
+        precio_sku = datos_memoria.get("precio_unitario_usd", 0.0)
         
         # Ventas (FIFO)
         ventas_sku = ventas_consolidadas.get(codigo, 0)
@@ -159,28 +141,26 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
                 diferencia = round(esperado - real, 2)
                 lotes = aplicar_fifo(lotes, diferencia)
                 total_mermas_dia += diferencia
+                total_mermas_usd_dia += (diferencia * costo_sku)
                 skus_con_merma_count += 1
 
-        # Envejecer Lotes
         for lote in lotes:
             lote["edad"] += 1
         
         total_sku_unidades = round(sum(l["cantidad"] for l in lotes), 2)
         total_unidades += total_sku_unidades
 
-        # Registrar SKUs que tienen stock pero no vendieron hoy
         if ventas_sku == 0 and total_sku_unidades > 0:
             skus_sin_venta_hoy.append({
                 "codigo_articulo": codigo,
-                "nombre": nombre_sku
+                "nombre": nombre_sku,
+                "stock": total_sku_unidades,
+                "costo_unidad_usd": costo_sku,
+                "precio_venta_usd": precio_sku
             })
         
-        # Reordenar diccionario de la memoria
         nombre = datos_memoria.get("nombre", "")
         categoria = datos_memoria.get("categoria", "Sin clasificar")
-        dias_max = datos_memoria.get("dias_maximos", 180)
-        precio_un = datos_memoria.get("precio_unitario_usd", 0.0)
-        costo_un = datos_memoria.get("costo_unitario_usd", 0.0)
         fecha_venta = datos_memoria.get("fecha_ultima_venta")
         
         datos_memoria.clear()
@@ -189,8 +169,8 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
         datos_memoria["categoria"] = categoria
         datos_memoria["existencia_total"] = total_sku_unidades
         datos_memoria["dias_maximos"] = dias_max
-        datos_memoria["precio_unitario_usd"] = precio_un
-        datos_memoria["costo_unitario_usd"] = costo_un
+        datos_memoria["precio_unitario_usd"] = precio_sku
+        datos_memoria["costo_unitario_usd"] = costo_sku
         datos_memoria["fecha_ultima_venta"] = fecha_venta
         datos_memoria["lotes"] = lotes
         
@@ -227,7 +207,6 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
         if sku_tiene_vencidos:
             skus_vencidos_count += 1
 
-    # Cálculos finales
     total_skus = len(memoria.keys())
     edad_promedio = round(suma_edades_unidades / total_unidades, 2) if total_unidades > 0 else 0.0
     porcentaje_riesgo = round((unidades_riesgo / total_unidades) * 100, 2) if total_unidades > 0 else 0.0
@@ -254,6 +233,7 @@ def ejecutar_control_inventario(inventario_hoy, ventas_hoy, memoria=None):
         "entradas_detectadas_unidades": round(total_entradas_dia, 2),
         "cantidad_skus_con_entrada": skus_con_entrada_count,
         "mermas_detectadas_unidades": round(total_mermas_dia, 2),
+        "mermas_detectadas_usd": round(total_mermas_usd_dia, 2),
         "cantidad_skus_con_merma": skus_con_merma_count,
         "cantidad_skus_sin_venta": len(skus_sin_venta_hoy),
         "skus_sin_venta": skus_sin_venta_hoy,
