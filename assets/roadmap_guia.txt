@@ -6,25 +6,6 @@ Este roadmap define la estrategia de crecimiento utilizada por el sistema. Su ob
 
 ---
 
-## Diagnóstico Inicial (Fase de Observación)
-
-Antes de iniciar oficialmente el roadmap, el sistema realiza un periodo de Diagnóstico Inicial de 7 días.
-
-### Objetivo
-
-Observar el comportamiento actual del negocio y validar que el estado operativo real coincida con el contexto obtenido durante el onboarding.
-
-Durante esta etapa:
-
-* El roadmap aún no ha comenzado oficialmente.
-* No se calcula progreso de ninguna fase.
-* No se evalúa estabilidad.
-* El Auditor puede detectar problemas relevantes de cualquier área del negocio para construir una visión inicial completa del estado del negocio.
-
-Al finalizar los 7 días, el sistema inicia oficialmente la Fase 1.
-
----
-
 ## Filosofía del Modelo
 
 El crecimiento de un negocio es acumulativo. Cada fase resuelve un conjunto de limitaciones antes de avanzar hacia objetivos más ambiciosos.
@@ -50,9 +31,28 @@ Las fases son secuenciales, pero no independientes. Al avanzar de fase:
 
 ### ⚠️ Regla General de Alertas (Filtro de Fase)
 
-* Durante el Diagnóstico Inicial, el Auditor puede detectar problemas relevantes de cualquier área del negocio para construir una visión inicial completa.
+* Durante la Fase de Observación, el Auditor puede detectar problemas relevantes de cualquier área del negocio para construir una visión inicial completa.
 * Una vez iniciado oficialmente el roadmap, el Auditor tiene estrictamente prohibido generar alertas para una fase superior a la fase actual.
 * Las desviaciones en métricas de fases futuras no generan alertas. Únicamente podrán mencionarse como observaciones informativas cuando representen un riesgo evidente para el negocio.
+
+---
+
+## Fase 0 — Observación (Diagnóstico Inicial)
+
+Antes de iniciar oficialmente el roadmap, el sistema realiza un periodo de Diagnóstico Inicial de 7 días.
+
+### Objetivo
+
+Observar el comportamiento actual del negocio y validar que el estado operativo real coincida con el contexto obtenido durante el onboarding.
+
+Durante esta etapa:
+
+* El roadmap aún no ha comenzado oficialmente.
+* No se calcula progreso de ninguna fase.
+* No se evalúa estabilidad.
+* El Auditor puede detectar problemas relevantes de cualquier área del negocio para construir una visión inicial completa del estado del negocio.
+
+Al finalizar los 7 días, el sistema inicia oficialmente la Fase 1.
 
 ---
 
@@ -149,7 +149,7 @@ Cada fase posee objetivos medibles mediante sus KPIs principales. Cada KPI tiene
 ## Principios Generales
 
 * El crecimiento sostenible ocurre por etapas.
-* Todo roadmap comienza con un Diagnóstico Inicial.
+* Todo roadmap comienza con el Diagnóstico Inicial (Fase de Observación).
 * La fase actual determina la prioridad estratégica del negocio.
 * Las fases anteriores nunca dejan de supervisarse.
 * Los KPIs son evidencia; los factores representan las causas subyacentes.
