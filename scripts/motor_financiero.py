@@ -65,6 +65,7 @@ def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dic
             prod_inv = inventario_data.get(codigo, {})
             costo_un = prod_inv.get("costo_unitario_usd", art.get("costo_unidad_usd", 0.0))
             categoria = prod_inv.get("categoria", art.get("categoria", "Sin clasificar"))
+            tipo_origen = prod_inv.get("tipo_origen", art.get("tipo_origen", "reventa")).strip().lower()
             
             if not nombre and prod_inv:
                 nombre = prod_inv.get("nombre", "")
@@ -88,6 +89,7 @@ def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dic
                     "codigo_articulo": codigo,
                     "nombre": nombre,
                     "categoria": categoria,
+                    "tipo_origen": tipo_origen,
                     "cantidad_vendida": 0.0,
                     "ventas_usd": 0.0,
                     "costo_usd": 0.0
@@ -102,6 +104,80 @@ def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dic
         if len(articulos_unicos_factura) >= 2:
             combo_tuple = tuple(articulos_unicos_factura)
             combinaciones_count[combo_tuple] = combinaciones_count.get(combo_tuple, 0) + 1
+
+    # Estructura cruda para desglose por origen
+    desglose_origen_raw = {
+        "elaborado": {"ventas_usd": 0.0, "costo_usd": 0.0, "unidades_vendidas": 0.0},
+        "reventa": {"ventas_usd": 0.0, "costo_usd": 0.0, "unidades_vendidas": 0.0}
+    }
+
+    # Categorías y Tabla Mix
+    categorias_dict = {}
+    for prod in inventario_data.values():
+        cat_inv = prod.get("categoria", "Sin clasificar").strip()
+        if cat_inv and cat_inv not in categorias_dict:
+            categorias_dict[cat_inv] = {
+                "categoria": cat_inv,
+                "ventas_usd": 0.0,
+                "costo_usd": 0.0,
+                "unidades_vendidas": 0.0
+            }
+
+    tabla_mix_lista = []
+    for codigo, datos in sku_ventas.items():
+        cat = datos["categoria"]
+        origen = datos["tipo_origen"]
+        v_usd = datos["ventas_usd"]
+        c_usd = datos["costo_usd"]
+        g_usd = v_usd - c_usd
+        cant_v = datos["cantidad_vendida"]
+        
+        margen_p = (g_usd / v_usd * 100) if v_usd > 0 else 0.0
+        participacion_p = (v_usd / venta_total_usd * 100) if venta_total_usd > 0 else 0.0
+        
+        tabla_mix_lista.append({
+            "codigo_articulo": codigo,
+            "nombre": datos["nombre"],
+            "categoria": cat,
+            "tipo_origen": origen,
+            "cantidad_vendida": round(cant_v, 2),
+            "ventas_usd": round(v_usd, 2),
+            "costo_usd": round(c_usd, 2),
+            "ganancia_usd": round(g_usd, 2),
+            "margen_porcentaje": round(margen_p, 2),
+            "participacion_porcentaje": round(participacion_p, 2)
+        })
+
+        # Acumular desglose por origen
+        if origen not in desglose_origen_raw:
+            desglose_origen_raw[origen] = {"ventas_usd": 0.0, "costo_usd": 0.0, "unidades_vendidas": 0.0}
+        desglose_origen_raw[origen]["ventas_usd"] += v_usd
+        desglose_origen_raw[origen]["costo_usd"] += c_usd
+        desglose_origen_raw[origen]["unidades_vendidas"] += cant_v
+        
+        if cat not in categorias_dict:
+            categorias_dict[cat] = {
+                "categoria": cat,
+                "ventas_usd": 0.0,
+                "costo_usd": 0.0,
+                "unidades_vendidas": 0.0
+            }
+        categorias_dict[cat]["ventas_usd"] += v_usd
+        categorias_dict[cat]["costo_usd"] += c_usd
+        categorias_dict[cat]["unidades_vendidas"] += cant_v
+
+    # Formatear desglose por origen con porcentajes
+    desglose_origen_formateado = {}
+    for origen_k, datos_k in desglose_origen_raw.items():
+        g_usd = datos_k["ventas_usd"] - datos_k["costo_usd"]
+        m_p = (g_usd / datos_k["ventas_usd"] * 100) if datos_k["ventas_usd"] > 0 else 0.0
+        desglose_origen_formateado[origen_k] = {
+            "ventas_usd": round(datos_k["ventas_usd"], 2),
+            "costo_usd": round(datos_k["costo_usd"], 2),
+            "ganancia_usd": round(g_usd, 2),
+            "margen_porcentaje": round(m_p, 2),
+            "unidades_vendidas": round(datos_k["unidades_vendidas"], 2)
+        }
 
     # 2. KPIs globales financieros
     ganancia_real_usd = venta_total_usd - costo_de_ventas_usd
@@ -123,7 +199,8 @@ def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dic
         "articulos_por_factura": round(articulos_por_factura, 2),
         "articulos_por_cliente": round(articulos_por_cliente, 2),
         "skus_vendidos": skus_vendidos,
-        "unidades_vendidas": round(unidades_vendidas, 2)
+        "unidades_vendidas": round(unidades_vendidas, 2),
+        "desglose_origen": desglose_origen_formateado
     }
 
     # 3. Valor económico del inventario
@@ -148,52 +225,6 @@ def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dic
         "ganancia_proyectada_usd": round(ganancia_proyectada_usd, 2),
         "margen_proyectado_porcentaje": round(margen_proyectado_porcentaje, 2)
     }
-
-    # 4 y 5. Categorías y Tabla Mix
-    categorias_dict = {}
-    for prod in inventario_data.values():
-        cat_inv = prod.get("categoria", "Sin clasificar").strip()
-        if cat_inv and cat_inv not in categorias_dict:
-            categorias_dict[cat_inv] = {
-                "categoria": cat_inv,
-                "ventas_usd": 0.0,
-                "costo_usd": 0.0,
-                "unidades_vendidas": 0.0
-            }
-
-    tabla_mix_lista = []
-    for codigo, datos in sku_ventas.items():
-        cat = datos["categoria"]
-        v_usd = datos["ventas_usd"]
-        c_usd = datos["costo_usd"]
-        g_usd = v_usd - c_usd
-        cant_v = datos["cantidad_vendida"]
-        
-        margen_p = (g_usd / v_usd * 100) if v_usd > 0 else 0.0
-        participacion_p = (v_usd / venta_total_usd * 100) if venta_total_usd > 0 else 0.0
-        
-        tabla_mix_lista.append({
-            "codigo_articulo": codigo,
-            "nombre": datos["nombre"],
-            "categoria": cat,
-            "cantidad_vendida": round(cant_v, 2),
-            "ventas_usd": round(v_usd, 2),
-            "costo_usd": round(c_usd, 2),
-            "ganancia_usd": round(g_usd, 2),
-            "margen_porcentaje": round(margen_p, 2),
-            "participacion_porcentaje": round(participacion_p, 2)
-        })
-        
-        if cat not in categorias_dict:
-            categorias_dict[cat] = {
-                "categoria": cat,
-                "ventas_usd": 0.0,
-                "costo_usd": 0.0,
-                "unidades_vendidas": 0.0
-            }
-        categorias_dict[cat]["ventas_usd"] += v_usd
-        categorias_dict[cat]["costo_usd"] += c_usd
-        categorias_dict[cat]["unidades_vendidas"] += cant_v
 
     tabla_mix_lista = sorted(tabla_mix_lista, key=lambda x: x["ventas_usd"], reverse=True)
 
@@ -222,6 +253,7 @@ def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dic
             "codigo_articulo": x["codigo_articulo"], 
             "nombre": x["nombre"], 
             "categoria": x["categoria"],
+            "tipo_origen": x["tipo_origen"],
             "cantidad_vendida": x["cantidad_vendida"]
         }
         for x in top_vendidos
@@ -235,6 +267,7 @@ def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dic
             "codigo_articulo": x["codigo_articulo"], 
             "nombre": x["nombre"], 
             "categoria": x["categoria"],
+            "tipo_origen": x["tipo_origen"],
             "ventas_usd": x["ventas_usd"],
             "ganancia_usd": x["ganancia_usd"],
             "ganancia_por_unidad_usd": round(g_por_unidad, 2),
@@ -247,6 +280,7 @@ def ejecutar_motor_financiero(inventario_actualizado: dict, kpis_inventario: dic
             "codigo_articulo": x["codigo_articulo"], 
             "nombre": x["nombre"], 
             "categoria": x["categoria"],
+            "tipo_origen": x["tipo_origen"],
             "ventas_usd": x["ventas_usd"]
         }
         for x in top_facturacion
