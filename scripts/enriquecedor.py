@@ -2,6 +2,7 @@ import json
 
 CAMPO_CATEGORIA = "categoria"
 CAMPO_DIAS = "dias_maximos"
+CAMPO_ORIGEN = "tipo_origen"
 
 
 def registrar_error(lista_errores, codigo, nombre, motivo):
@@ -68,6 +69,15 @@ def obtener_info_catalogo(codigo, nombre, catalogo_dict, errores):
         )
         return None
 
+    if CAMPO_ORIGEN not in info:
+        registrar_error(
+            errores,
+            codigo,
+            nombre,
+            "El SKU existe pero no tiene tipo de origen."
+        )
+        return None
+
     return info
 
 
@@ -77,7 +87,6 @@ def obtener_info_catalogo(codigo, nombre, catalogo_dict, errores):
 
 def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nuevos=None):
     # 1. UNIR CATÁLOGOS
-    # normalizar_catalogo convierte texto plano a JSON si viene del Data Store
     dict_memoria = normalizar_catalogo(catalogo_memoria)
     dict_nuevos = normalizar_catalogo(catalogo_nuevos)
     
@@ -96,6 +105,7 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nu
         info = obtener_info_catalogo(codigo, nombre, catalogo_dict, errores)
         if info:
             producto[CAMPO_CATEGORIA] = info[CAMPO_CATEGORIA]
+            producto[CAMPO_ORIGEN] = info[CAMPO_ORIGEN]
 
     # 3. ENRIQUECER FACTURAS
     key_facturas = "facturas_agrupadas" if "facturas_agrupadas" in ventas else "facturas"
@@ -110,6 +120,7 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nu
             info = obtener_info_catalogo(codigo, nombre, catalogo_dict, errores)
             if info:
                 producto[CAMPO_CATEGORIA] = info[CAMPO_CATEGORIA]
+                producto[CAMPO_ORIGEN] = info[CAMPO_ORIGEN]
 
     # 4. ENRIQUECER INVENTARIO
     for producto in inventario.get("productos", []):
@@ -120,6 +131,7 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nu
         if info:
             producto[CAMPO_CATEGORIA] = info[CAMPO_CATEGORIA]
             producto[CAMPO_DIAS] = info[CAMPO_DIAS]
+            producto[CAMPO_ORIGEN] = info[CAMPO_ORIGEN]
 
     # 5. RETORNAR RESULTADOS Y EL CATÁLOGO UNIFICADO
     return {
