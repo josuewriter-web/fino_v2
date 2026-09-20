@@ -34,7 +34,7 @@ def actualizar_objetivos_estrategicos(estado: dict, kpis_mapeados: dict, fecha_h
     kpis_decrecientes = ["productos_en_riesgo", "productos_vencidos"]
 
     for clave, valor_actual in kpis_mapeados.items():
-        if clave in objetivos and isinstance(objetivos[clave], dict):
+        if clave in objetivos:
             objetivos[clave]["actual"] = valor_actual
 
             inicial = objetivos[clave].get("inicial", 0)
@@ -63,17 +63,14 @@ def actualizar_objetivos_estrategicos(estado: dict, kpis_mapeados: dict, fecha_h
 
 
 def procesar_observacion(estado: dict, fecha_hoy: str) -> bool:
+    """
+    Maneja la Fase 0 (Fase de Observación de 7 días).
+    Retorna True si la Observación está activa hoy.
+    Retorna False si la Observación terminó o no aplica.
+    """
     perfil = estado["perfil_negocio"]
-    
-    # Garantizar que la clave observacion exista en el diccionario principal
-    if "observacion" not in perfil:
-        perfil["observacion"] = perfil.get("diagnostico", {"activo": False, "completado": False})
-    
-    obs = perfil["observacion"]
+    obs = perfil.get("observacion", perfil.get("diagnostico", {}))
     estado_act = perfil["estado_actual"]
-
-    if "historial_fases" not in perfil:
-        perfil["historial_fases"] = []
 
     # Si no está en observación y la fase no es 0, continuamos con el flujo normal
     if not obs.get("activo", False) and estado_act.get("fase") != 0:
@@ -91,31 +88,29 @@ def procesar_observacion(estado: dict, fecha_hoy: str) -> bool:
         obs["completado"] = True
 
         # Transición oficial a Fase 1
-        fase_1 = perfil["roadmap"].get("fase_1", {})
+        fase_1 = perfil["roadmap"]["fase_1"]
         estado_act["fase"] = 1
         estado_act["etapa"] = "Roadmap Oficial"
-        estado_act["nombre_fase"] = fase_1.get("nombre", "Fase 1")
+        estado_act["nombre_fase"] = fase_1["nombre"]
         estado_act["fecha_inicio"] = fecha_hoy
         estado_act["fecha_inicio_roadmap"] = fecha_hoy
-        estado_act["dias_en_fase"] = 0
+        estado_act["dias_en_fase"] = 0  # Se incrementa a 1 en el flujo principal
         estado_act["progreso"] = 0
         estado_act["dias_estabilidad"] = 0
         estado_act["estado"] = "En progreso"
 
-        # Registrar Fase 0 en el historial si no existe
-        fase_0_registrada = any(h.get("fase") == 0 for h in perfil["historial_fases"])
-        if not fase_0_registrada:
-            perfil["historial_fases"].append({
-                "fase": 0,
-                "nombre": "Fase de Observación",
-                "fecha_inicio": obs["fecha_inicio"],
-                "fecha_fin": fecha_hoy,
-                "duracion_dias": duracion,
-                "porcentaje_final": 100.0
-            })
-        return False
+        # Registrar Fase 0 en el historial
+        perfil["historial_fases"].append({
+            "fase": 0,
+            "nombre": "Fase de Observación",
+            "fecha_inicio": obs["fecha_inicio"],
+            "fecha_fin": fecha_hoy,
+            "duracion_dias": duracion,
+            "porcentaje_final": 100.0
+        })
+        return False  # Pasa a la evaluación regular de la Fase 1
 
-    # Mientras se mantenga en los días de observación
+    # Mientras se mantenga en los 7 días de observación
     progreso_calculado = round((dia_actual / duracion) * 100, 2)
 
     estado_act["fase"] = 0
@@ -195,9 +190,6 @@ def controlar_estabilidad(estado: dict, cumplidos: list, pendientes: list, fase_
     estado_actual = estado["perfil_negocio"]["estado_actual"]
     roadmap = estado["perfil_negocio"]["roadmap"]
 
-    if "dias_estabilidad" not in estado_actual:
-        estado_actual["dias_estabilidad"] = 0
-
     if fase_key not in roadmap:
         return False
 
@@ -205,19 +197,14 @@ def controlar_estabilidad(estado: dict, cumplidos: list, pendientes: list, fase_
 
     if len(pendientes) == 0 and len(cumplidos) > 0:
         estado_actual["dias_estabilidad"] += 1
-    else:
-        estado_actual["dias_estabilidad"] = 0  # Reiniciar si falla algún criterio
 
     return estado_actual["dias_estabilidad"] >= dias_requeridos
 
 
 def avanzar_fase(estado: dict, fase_key: str, fecha_hoy: str):
-    perfil = estado["perfil_negocio"]
-    estado_actual = perfil["estado_actual"]
-    roadmap = perfil["roadmap"]
-
-    if "historial_fases" not in perfil:
-        perfil["historial_fases"] = []
+    estado_actual = estado["perfil_negocio"]["estado_actual"]
+    roadmap = estado["perfil_negocio"]["roadmap"]
+    historial = estado["perfil_negocio"]["historial_fases"]
 
     fase_num = estado_actual["fase"]
     fecha_inicio = estado_actual.get("fecha_inicio", fecha_hoy)
@@ -229,7 +216,7 @@ def avanzar_fase(estado: dict, fase_key: str, fecha_hoy: str):
     except Exception:
         duracion = 0
 
-    perfil["historial_fases"].append({
+    historial.append({
         "fase": fase_num,
         "nombre": roadmap[fase_key]["nombre"],
         "fecha_inicio": fecha_inicio,
@@ -265,11 +252,9 @@ def ejecutar_motor_estado(
 
     fecha_hoy = fecha if fecha else datetime.today().strftime("%Y-%m-%d")
 
-    # Extraer KPIs anidados correctamente
+    # Extraer KPIs financieros anidados
     kpis_fin = kpis_financieros.get("kpis_financieros", kpis_financieros)
-    kpis_inv_generales = kpis_inventario.get("generales", kpis_inventario.get("kpis_inventario", kpis_inventario))
-    
-    kpis_totales_brutos = {**kpis_fin, **kpis_inv_generales}
+    kpis_totales_brutos = {**kpis_fin, **kpis_inventario}
     kpis_mapeados = mapear_kpis_estrategicos(kpis_totales_brutos)
 
     # 1. Actualizar objetivos estratégicos
