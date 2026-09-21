@@ -1,13 +1,20 @@
+import json
 from datetime import datetime
+from typing import Any, Dict, List, Union
+from fastapi import FastAPI, HTTPException
 
 DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
-def calcular_margen(ganancia, ventas):
+app = FastAPI(title="Consolidador Semanal API")
+
+
+def calcular_margen(ganancia: float, ventas: float) -> float:
     if ventas > 0:
         return round((ganancia / ventas) * 100, 2)
     return 0.0
 
-def parsear_fecha(fecha_str):
+
+def parsear_fecha(fecha_str: str) -> datetime:
     for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
         try:
             return datetime.strptime(fecha_str, fmt)
@@ -15,18 +22,41 @@ def parsear_fecha(fecha_str):
             pass
     return datetime.min
 
-def obtener_nombre_dia(fecha_str):
+
+def obtener_nombre_dia(fecha_str: str) -> str:
     dt = parsear_fecha(fecha_str)
     if dt != datetime.min:
         return DIAS_SEMANA[dt.weekday()]
     return "desconocido"
 
-def procesar_semana(dias_json):
+
+def obtener_dict_inv(dia: dict) -> dict:
+    inv = dia.get("kpis_inventario", {})
+    if isinstance(inv, dict) and "generales" in inv and isinstance(inv["generales"], dict):
+        res = inv["generales"].copy()
+        for k, v in inv.items():
+            if k != "generales" and k not in res:
+                res[k] = v
+        return res
+    return inv if isinstance(inv, dict) else {}
+
+
+def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
+    # Si Make envía el JSON como texto plano (string), lo convertimos a objeto
+    if isinstance(dias_json, str):
+        try:
+            dias_json = json.loads(dias_json)
+        except Exception:
+            return {"error": "El cuerpo de la petición no es un JSON válido"}
+
+    if isinstance(dias_json, dict):
+        dias_json = [dias_json]
+
     if not dias_json or not isinstance(dias_json, list):
-        return {"error": "Se esperaba una lista de reportes diarios"}
+        return {"error": "Se esperaba un reporte diario o una lista de reportes"}
 
     dias_ordenados = sorted(
-        [d for d in dias_json if "informacion_sistema" in d],
+        [d for d in dias_json if isinstance(d, dict) and "informacion_sistema" in d],
         key=lambda x: parsear_fecha(x["informacion_sistema"]["fecha_reporte"])
     )
     
@@ -84,7 +114,11 @@ def procesar_semana(dias_json):
                 desglose_origen[origen]["ventas_usd"] += desglose_dia[origen].get("ventas_usd") or 0.0
                 desglose_origen[origen]["costo_usd"] += desglose_dia[origen].get("costo_usd") or 0.0
                 desglose_origen[origen]["ganancia_usd"] += desglose_dia[origen].get("ganancia_usd") or 0.0
-                desglose_origen[origen]["unidades"] += desglose_dia[origen].get("unidades") or 0.0
+                desglose_origen[origen]["unidades"] += (
+                    desglose_dia[origen].get("unidades_vendidas")
+                    or desglose_dia[origen].get("unidades")
+                    or 0.0
+                )
         
         evolucion_diaria.append({
             "fecha": fecha,
@@ -214,11 +248,12 @@ def procesar_semana(dias_json):
             "top_productos": [{"nombre": p["nombre"], "unidades": round(p["unidades"], 2)} for p in top_5_turno]
         }
 
-    inv_inicial = dias_ordenados[0].get("kpis_inventario", {})
-    inv_final = dias_ordenados[-1].get("kpis_inventario", {})
+    inv_inicial = obtener_dict_inv(dias_ordenados[0])
+    inv_final = obtener_dict_inv(dias_ordenados[-1])
+    val_econ_final = dias_ordenados[-1].get("valor_economico_inventario", {})
     
-    mermas_totales_unidades = sum([(d.get("kpis_inventario", {}).get("mermas_detectadas_unidades") or 0.0) for d in dias_ordenados])
-    mermas_totales_usd = sum([(d.get("kpis_inventario", {}).get("mermas_detectadas_usd") or 0.0) for d in dias_ordenados])
+    mermas_totales_unidades = sum([obtener_dict_inv(d).get("mermas_detectadas_unidades") or 0.0 for d in dias_ordenados])
+    mermas_totales_usd = sum([obtener_dict_inv(d).get("mermas_detectadas_usd") or 0.0 for d in dias_ordenados])
 
     raw_skus_sin_venta = inv_final.get("skus_sin_venta", [])
     processed_sin_venta = []
@@ -270,6 +305,7 @@ def procesar_semana(dias_json):
             "ticket_promedio_usd": ticket_promedio_semanal,
             "articulos_por_factura": articulos_por_factura_semanal,
             "unidades_totales_vendidas": round(unidades_totales, 2),
+            "concentracion_top5_porcentaje": concentracion_top_5,
             "desglose_origen": desglose_origen
         },
         "hitos_semanales": hitos_semanales,
@@ -279,6 +315,9 @@ def procesar_semana(dias_json):
             "unidades_fin_semana": inv_final.get("total_unidades") or 0.0,
             "skus_activos_fin_semana": inv_final.get("total_skus") or 0,
             "salud_inventario_porcentaje": inv_final.get("salud_del_inventario") or inv_final.get("salud_inventario") or 100.0,
+            "costo_inventario_usd": val_econ_final.get("valor_costo_total_usd") or 0.0,
+            "venta_potencial_usd": val_econ_final.get("valor_potencial_total_usd") or 0.0,
+            "ganancia_proyectada_usd": val_econ_final.get("ganancia_proyectada_usd") or 0.0,
             "mermas_totales_unidades": round(mermas_totales_unidades, 2),
             "mermas_totales_usd": round(mermas_totales_usd, 2),
             "valor_en_riesgo_usd": inv_final.get("valor_en_riesgo") or 0.0,
@@ -293,10 +332,21 @@ def procesar_semana(dias_json):
         "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
         "top_baja_rotacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_baja_rotacion],
         "top_skus_sin_venta": top_skus_sin_venta,
-        "consistencia_productos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "dias_vendido": p["dias_vendido"]} for p in lista_productos],
         "comportamiento_temporal": comportamiento_temporal_final,
-        "concentracion": {
-            "participacion_top5_porcentaje": concentracion_top_5
-        },
         "afinidad_productos": resultado_afinidad
     }
+
+
+# Endpoints de la API
+@app.get("/")
+def health_check():
+    return {"status": "ok", "message": "Consolidador Semanal API funcionando correctamente"}
+
+
+@app.post("/procesar-semana")
+def api_procesar_semana(payload: Union[List[Dict[str, Any]], Dict[str, Any]], key: str = None):
+    # La API recibe el JSON por POST desde Make
+    resultado = procesar_semana(payload)
+    if isinstance(resultado, dict) and "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
