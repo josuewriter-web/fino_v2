@@ -1,5 +1,7 @@
 from datetime import datetime
 
+DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
 def calcular_margen(ganancia, ventas):
     if ventas > 0:
         return round((ganancia / ventas) * 100, 2)
@@ -12,6 +14,12 @@ def parsear_fecha(fecha_str):
         except ValueError:
             pass
     return datetime.min
+
+def obtener_nombre_dia(fecha_str):
+    dt = parsear_fecha(fecha_str)
+    if dt != datetime.min:
+        return DIAS_SEMANA[dt.weekday()]
+    return "desconocido"
 
 def procesar_semana(dias_json):
     if not dias_json or not isinstance(dias_json, list):
@@ -29,7 +37,6 @@ def procesar_semana(dias_json):
     fecha_inicio = dias_ordenados[0]["informacion_sistema"]["fecha_reporte"]
     fecha_fin = dias_ordenados[-1]["informacion_sistema"]["fecha_reporte"]
 
-    # Totales generales
     ventas_totales = 0.0
     costo_total = 0.0
     ganancia_total = 0.0
@@ -37,7 +44,6 @@ def procesar_semana(dias_json):
     facturas_totales = 0
     unidades_totales = 0.0
 
-    # Desglose por origen (Elaborado vs Reventa)
     desglose_origen = {
         "elaborado": {"ventas_usd": 0.0, "costo_usd": 0.0, "ganancia_usd": 0.0, "unidades": 0.0},
         "reventa": {"ventas_usd": 0.0, "costo_usd": 0.0, "ganancia_usd": 0.0, "unidades": 0.0}
@@ -55,6 +61,7 @@ def procesar_semana(dias_json):
 
     for dia in dias_ordenados:
         fecha = dia["informacion_sistema"]["fecha_reporte"]
+        nombre_dia = obtener_nombre_dia(fecha)
         fin = dia.get("kpis_financieros", {})
         
         v_dia = fin.get("venta_total_usd") or 0.0
@@ -71,7 +78,6 @@ def procesar_semana(dias_json):
         facturas_totales += fac_dia
         unidades_totales += u_dia
 
-        # Acumular desglose por origen si existe en el reporte diario
         desglose_dia = fin.get("desglose_origen", {})
         for origen in ["elaborado", "reventa"]:
             if origen in desglose_dia:
@@ -82,6 +88,7 @@ def procesar_semana(dias_json):
         
         evolucion_diaria.append({
             "fecha": fecha,
+            "dia_semana": nombre_dia,
             "ventas_usd": round(v_dia, 2),
             "facturas": fac_dia,
             "ticket_promedio": fin.get("ticket_promedio_usd") or 0.0
@@ -107,6 +114,7 @@ def procesar_semana(dias_json):
         for prod in dia.get("tabla_mix", []):
             codigo = str(prod.get("codigo_articulo", "")).strip()
             tipo_origen = prod.get("tipo_origen") or prod.get("origen") or "reventa"
+            cant_vendida = prod.get("cantidad_vendida") or prod.get("unidades_vendidas") or 0.0
             
             if codigo not in productos_dict:
                 productos_dict[codigo] = {
@@ -118,14 +126,20 @@ def procesar_semana(dias_json):
                     "costo_usd": 0.0, 
                     "ganancia_usd": 0.0, 
                     "unidades": 0.0, 
-                    "dias_vendido": 0
+                    "dias_vendido": 0,
+                    "ventas_diarias": {}
                 }
             
             productos_dict[codigo]["ventas_usd"] += prod.get("ventas_usd") or 0.0
             productos_dict[codigo]["costo_usd"] += prod.get("costo_usd") or 0.0
             productos_dict[codigo]["ganancia_usd"] += prod.get("ganancia_usd") or 0.0
-            productos_dict[codigo]["unidades"] += prod.get("cantidad_vendida") or prod.get("unidades_vendidas") or 0.0
+            productos_dict[codigo]["unidades"] += cant_vendida
             productos_dict[codigo]["dias_vendido"] += 1
+            
+            productos_dict[codigo]["ventas_diarias"][fecha] = {
+                "dia_semana": nombre_dia,
+                "unidades": cant_vendida
+            }
 
         temp = dia.get("comportamiento_temporal", {})
         for turno in ["mañana", "tarde", "noche"]:
@@ -146,7 +160,6 @@ def procesar_semana(dias_json):
     ticket_promedio_semanal = round(ventas_totales / facturas_totales, 2) if facturas_totales > 0 else 0.0
     articulos_por_factura_semanal = round(unidades_totales / facturas_totales, 2) if facturas_totales > 0 else 0.0
     
-    # Redondeo del desglose por origen y calculo de márgenes por origen
     for origen in desglose_origen:
         v_orig = desglose_origen[origen]["ventas_usd"]
         g_orig = desglose_origen[origen]["ganancia_usd"]
@@ -159,8 +172,8 @@ def procesar_semana(dias_json):
     dia_max = max(evolucion_diaria, key=lambda x: x["ventas_usd"])
     dia_min = min(evolucion_diaria, key=lambda x: x["ventas_usd"])
     hitos_semanales = {
-        "mejor_dia": {"fecha": dia_max["fecha"], "ventas_usd": round(dia_max["ventas_usd"], 2)},
-        "peor_dia": {"fecha": dia_min["fecha"], "ventas_usd": round(dia_min["ventas_usd"], 2)}
+        "mejor_dia": {"fecha": dia_max["fecha"], "dia_semana": dia_max["dia_semana"], "ventas_usd": round(dia_max["ventas_usd"], 2)},
+        "peor_dia": {"fecha": dia_min["fecha"], "dia_semana": dia_min["dia_semana"], "ventas_usd": round(dia_min["ventas_usd"], 2)}
     }
 
     lista_categorias = []
@@ -176,8 +189,7 @@ def procesar_semana(dias_json):
     for p in lista_productos:
         p["margen_porcentaje"] = calcular_margen(p["ganancia_usd"], p["ventas_usd"])
         p["participacion_porcentaje"] = round((p["ventas_usd"] / ventas_totales) * 100, 2) if ventas_totales > 0 else 0.0
-        # Velocidad de venta diaria en la semana
-        p["velocidad_diaria_unidades"] = round(p["unidades"] / dias_disponibles, 2)
+        p["promedio_diario_unidades"] = round(p["unidades"] / dias_disponibles, 2)
 
     top_vendidos = sorted(lista_productos, key=lambda x: x["unidades"], reverse=True)[:5]
     top_facturacion = sorted(lista_productos, key=lambda x: x["ventas_usd"], reverse=True)[:5]
@@ -216,7 +228,6 @@ def procesar_semana(dias_json):
         stk = sku.get("stock") or 0.0
         c_un = sku.get("costo_unidad_usd") or 0.0
         p_un = sku.get("precio_venta_usd") or 0.0
-        origen = sku.get("tipo_origen") or "reventa"
 
         cap_costo = round(stk * c_un, 2)
         cap_venta = round(stk * p_un, 2)
@@ -224,7 +235,6 @@ def procesar_semana(dias_json):
         processed_sin_venta.append({
             "codigo": cod,
             "nombre": nom,
-            "tipo_origen": origen,
             "stock": stk,
             "costo_unidad_usd": c_un,
             "precio_venta_usd": p_un,
@@ -278,12 +288,12 @@ def procesar_semana(dias_json):
         },
         "categorias": lista_categorias,
         "tabla_mix": lista_productos,
-        "top_vendidos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "tipo_origen": p["tipo_origen"], "unidades": p["unidades"], "velocidad_diaria": p["velocidad_diaria_unidades"]} for p in top_vendidos],
-        "top_facturacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "tipo_origen": p["tipo_origen"], "ventas_usd": round(p["ventas_usd"], 2)} for p in top_facturacion],
-        "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "tipo_origen": p["tipo_origen"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
-        "top_baja_rotacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "tipo_origen": p["tipo_origen"], "unidades": p["unidades"], "velocidad_diaria": p["velocidad_diaria_unidades"]} for p in top_baja_rotacion],
+        "top_vendidos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_vendidos],
+        "top_facturacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ventas_usd": round(p["ventas_usd"], 2)} for p in top_facturacion],
+        "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
+        "top_baja_rotacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_baja_rotacion],
         "top_skus_sin_venta": top_skus_sin_venta,
-        "consistencia_productos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "tipo_origen": p["tipo_origen"], "dias_vendido": p["dias_vendido"]} for p in lista_productos],
+        "consistencia_productos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "dias_vendido": p["dias_vendido"]} for p in lista_productos],
         "comportamiento_temporal": comportamiento_temporal_final,
         "concentracion": {
             "participacion_top5_porcentaje": concentracion_top_5
