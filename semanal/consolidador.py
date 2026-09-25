@@ -42,7 +42,6 @@ def obtener_dict_inv(dia: dict) -> dict:
 
 
 def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
-    # Si Make envía el JSON como texto plano (string), lo convertimos a objeto
     if isinstance(dias_json, str):
         try:
             dias_json = json.loads(dias_json)
@@ -230,6 +229,29 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
     top_rentables = sorted(lista_productos, key=lambda x: x["ganancia_usd"], reverse=True)[:5]
     top_baja_rotacion = sorted(lista_productos, key=lambda x: x["unidades"])[:5]
 
+    # Construcción de top_skus_rotacion (Máximo 40 elaborados y 40 reventa)
+    elaborados_list = [p for p in lista_productos if p.get("tipo_origen") == "elaborado"]
+    reventa_list = [p for p in lista_productos if p.get("tipo_origen") != "elaborado"]
+
+    elaborados_sorted = sorted(elaborados_list, key=lambda x: x["unidades"], reverse=True)[:40]
+    reventa_sorted = sorted(reventa_list, key=lambda x: x["unidades"], reverse=True)[:40]
+
+    def formatear_sku_rotacion(p):
+        return {
+            "codigo": p["codigo_articulo"],
+            "nombre": p["nombre"],
+            "categoria": p["categoria"],
+            "unidades": p["unidades"],
+            "ventas_usd": round(p["ventas_usd"], 2),
+            "promedio_diario_unidades": p["promedio_diario_unidades"],
+            "ventas_diarias": p["ventas_diarias"]
+        }
+
+    top_skus_rotacion = {
+        "elaborados": [formatear_sku_rotacion(p) for p in elaborados_sorted],
+        "reventa": [formatear_sku_rotacion(p) for p in reventa_sorted]
+    }
+
     ventas_top_5 = sum([p["ventas_usd"] for p in top_facturacion])
     concentracion_top_5 = round((ventas_top_5 / ventas_totales) * 100, 2) if ventas_totales > 0 else 0.0
 
@@ -327,6 +349,7 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
         },
         "categorias": lista_categorias,
         "tabla_mix": lista_productos,
+        "top_skus_rotacion": top_skus_rotacion,
         "top_vendidos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_vendidos],
         "top_facturacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ventas_usd": round(p["ventas_usd"], 2)} for p in top_facturacion],
         "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
@@ -345,7 +368,6 @@ def health_check():
 
 @app.post("/procesar-semana")
 def api_procesar_semana(payload: Union[List[Dict[str, Any]], Dict[str, Any]], key: str = None):
-    # La API recibe el JSON por POST desde Make
     resultado = procesar_semana(payload)
     if isinstance(resultado, dict) and "error" in resultado:
         raise HTTPException(status_code=400, detail=resultado["error"])
