@@ -42,6 +42,7 @@ def obtener_dict_inv(dia: dict) -> dict:
 
 
 def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
+    # Si Make envía el JSON como texto plano (string), lo convertimos a objeto
     if isinstance(dias_json, str):
         try:
             dias_json = json.loads(dias_json)
@@ -65,6 +66,16 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
 
     fecha_inicio = dias_ordenados[0]["informacion_sistema"]["fecha_reporte"]
     fecha_fin = dias_ordenados[-1]["informacion_sistema"]["fecha_reporte"]
+
+    # Generar identificadores automáticos para la memoria de rotación
+    dt_inicio = parsear_fecha(fecha_inicio)
+    if dt_inicio != datetime.min:
+        iso_year, iso_week, _ = dt_inicio.isocalendar()
+        semana_id = f"{iso_year}-W{iso_week:02d}"
+    else:
+        semana_id = "Semana-Desconocida"
+
+    fechas_rango = f"{fecha_inicio} al {fecha_fin}" if fecha_inicio != fecha_fin else fecha_inicio
 
     ventas_totales = 0.0
     costo_total = 0.0
@@ -155,6 +166,8 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
                     "nombre": prod.get("nombre", "Desconocido"),
                     "categoria": prod.get("categoria", "General"),
                     "tipo_origen": tipo_origen,
+                    "semana_id": semana_id,
+                    "fechas_rango": fechas_rango,
                     "ventas_usd": 0.0, 
                     "costo_usd": 0.0, 
                     "ganancia_usd": 0.0, 
@@ -229,29 +242,6 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
     top_rentables = sorted(lista_productos, key=lambda x: x["ganancia_usd"], reverse=True)[:5]
     top_baja_rotacion = sorted(lista_productos, key=lambda x: x["unidades"])[:5]
 
-    # Construcción de top_skus_rotacion (Máximo 40 elaborados y 40 reventa)
-    elaborados_list = [p for p in lista_productos if p.get("tipo_origen") == "elaborado"]
-    reventa_list = [p for p in lista_productos if p.get("tipo_origen") != "elaborado"]
-
-    elaborados_sorted = sorted(elaborados_list, key=lambda x: x["unidades"], reverse=True)[:40]
-    reventa_sorted = sorted(reventa_list, key=lambda x: x["unidades"], reverse=True)[:40]
-
-    def formatear_sku_rotacion(p):
-        return {
-            "codigo": p["codigo_articulo"],
-            "nombre": p["nombre"],
-            "categoria": p["categoria"],
-            "unidades": p["unidades"],
-            "ventas_usd": round(p["ventas_usd"], 2),
-            "promedio_diario_unidades": p["promedio_diario_unidades"],
-            "ventas_diarias": p["ventas_diarias"]
-        }
-
-    top_skus_rotacion = {
-        "elaborados": [formatear_sku_rotacion(p) for p in elaborados_sorted],
-        "reventa": [formatear_sku_rotacion(p) for p in reventa_sorted]
-    }
-
     ventas_top_5 = sum([p["ventas_usd"] for p in top_facturacion])
     concentracion_top_5 = round((ventas_top_5 / ventas_totales) * 100, 2) if ventas_totales > 0 else 0.0
 
@@ -312,6 +302,8 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
     resultado_afinidad = afinidades if afinidades else "No se detectaron patrones de frecuencia de compra"
 
     return {
+        "semana_id": semana_id,
+        "fechas_rango": fechas_rango,
         "periodo": {
             "fecha_inicio": fecha_inicio,
             "fecha_fin": fecha_fin,
@@ -349,7 +341,6 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
         },
         "categorias": lista_categorias,
         "tabla_mix": lista_productos,
-        "top_skus_rotacion": top_skus_rotacion,
         "top_vendidos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_vendidos],
         "top_facturacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ventas_usd": round(p["ventas_usd"], 2)} for p in top_facturacion],
         "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
