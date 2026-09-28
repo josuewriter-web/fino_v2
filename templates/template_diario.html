@@ -27,29 +27,51 @@
             background-color: #000000;
         }
 
+        .cover-eyebrow {
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 10mm;
+            margin-bottom: 4px;
+        }
+
         .cover-title {
-            font-size: 20px; 
-            font-weight: 600; 
+            font-size: 22px; 
+            font-weight: 700; 
             color: #ffffff;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 18mm;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
             line-height: 1.2;
         }
 
         .cover-business {
-            font-size: 14px; 
+            font-size: 15px; 
             font-weight: 700;
-            color: #94a3b8;
+            color: #f1f5f9;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
         }
 
         .cover-date {
             font-size: 12px; 
             font-weight: 500;
-            color: #64748b;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+
+        .cover-phase-badge {
+            display: inline-block;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #f8fafc;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
         }
         
         .kpi-circle {
@@ -96,7 +118,9 @@
 
         /* Poppins para identidad, títulos, subtítulos y números de impacto */
         h1, h2, h3, h4, 
+        .cover-eyebrow,
         .cover-title, 
+        .cover-business,
         .business-name, 
         .kpi-value, 
         .kpi-label, 
@@ -296,7 +320,7 @@
 <body>
 
     <!-- PORTADA -->
-    <div class="section-cover" style="text-align: center;">
+    <div class="section-cover">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 150" style="display: inline-block; width: 80mm; height: auto; margin-bottom: 1mm;">
             <defs>
                 <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -312,9 +336,12 @@
             </g>
         </svg>
 
-        <div class="cover-title">Inteligencia de Negocios</div>
-        <div class="cover-business">[Nombre del Negocio]</div>
+        <div class="cover-eyebrow">Inteligencia de Negocios</div>
+        <div class="cover-title">Reporte Diario</div>
+        
+        <div class="cover-business">[nombre_negocio]</div>
         <div class="cover-date">[Fecha del Reporte]</div>
+        <div class="cover-phase-badge">Fase [fase_numero] - [fase_nombre]</div>
     </div>
 
     <!-- PÁGINA 1: DASHBOARD DE VENTAS -->
@@ -419,7 +446,7 @@
                 </div>
                 <div class="sub-block">
                     <div class="box-impacto">
-                        <span class="section-box-label">★ Beneficio Estimado</span>
+                        <span class="section-box-label">✦ Beneficio Estimado</span>
                         <p class="section-box-text">[beneficio_estabilidad]</p>
                     </div>
                 </div>
@@ -465,7 +492,7 @@
                 </div>
                 <div class="sub-block">
                     <div class="box-impacto">
-                        <span class="section-box-label">★ Beneficio Estimado</span>
+                        <span class="section-box-label">✦ Beneficio Estimado</span>
                         <p class="section-box-text">[alerta_beneficio]</p>
                     </div>
                 </div>
@@ -505,7 +532,7 @@
                 </div>
                 <div class="sub-block">
                     <div class="box-impacto">
-                        <span class="section-box-label">★ Beneficio Estimado</span>
+                        <span class="section-box-label">✦ Beneficio Estimado</span>
                         <p class="section-box-text">[logro_beneficio]</p>
                     </div>
                 </div>
@@ -631,37 +658,9 @@
                     <!-- [FIN_SI_ESTABILIDAD_FASE_3_ACTIVA] -->
                 </div>
             </div>
-
-            <!-- FASE 4 -->
-            <div class="evo-card-linear">
-                <div class="evo-left-content">
-                    <div class="evo-fase-label">Fase 04</div>
-                    <div class="evo-title">Más Ganancia</div>
-                    <p class="evo-desc">Maximiza tus márgenes y rentabilidad total para aumentar tus ganancias totales.</p>
-                    
-                    <div class="evo-metas-box">
-                        <!-- [LOOP_METAS_FASE_4_INICIO] -->
-                        <div class="evo-meta-item">
-                            <span class="evo-meta-label">[meta_X_nombre]:</span> 
-                            <span class="evo-meta-val">[meta_X_valores]</span> 
-                            <span class="evo-meta-ok">[meta_X_check]</span>
-                        </div>
-                        <!-- [LOOP_METAS_FASE_4_FIN] -->
-                    </div>
-                </div>
-                <div class="evo-right-meta">
-                    <div class="evo-bar-container">
-                        <div class="evo-bar-fill [fase_4_clase_barra]" style="width: [fase_4_ancho_barra];"></div>
-                    </div>
-                    <span class="evo-status-text" style="color: [fase_4_color_texto];">[fase_4_estado]</span>
-                    <!-- [SI_ESTABILIDAD_FASE_4_ACTIVA] -->
-                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
-                    <!-- [FIN_SI_ESTABILIDAD_FASE_4_ACTIVA] -->
-                </div>
-            </div>
         </div>
     </div>
-    
+
     <div id="fin-del-reporte">&nbsp;</div>
 </body>
 </html>
