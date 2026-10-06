@@ -242,6 +242,27 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
     top_rentables = sorted(lista_productos, key=lambda x: x["ganancia_usd"], reverse=True)[:5]
     top_baja_rotacion = sorted(lista_productos, key=lambda x: x["unidades"])[:5]
 
+    # --- SECCIÓN: Selección de SKUs por unidades vendidas para la Guía de Rotación (máx 20) ---
+    prods_elaborados = [p for p in lista_productos if p.get("tipo_origen") == "elaborado"]
+    prods_reventa = [p for p in lista_productos if p.get("tipo_origen") != "elaborado"]
+
+    top_elaborados = sorted(
+        prods_elaborados, 
+        key=lambda x: (x["unidades"], x["ventas_usd"]), 
+        reverse=True
+    )[:20]
+    
+    top_reventa = sorted(
+        prods_reventa, 
+        key=lambda x: (x["unidades"], x["ventas_usd"]), 
+        reverse=True
+    )[:20]
+
+    top_skus_rotacion = {
+        "elaborados": top_elaborados,
+        "reventa": top_reventa
+    }
+
     ventas_top_5 = sum([p["ventas_usd"] for p in top_facturacion])
     concentracion_top_5 = round((ventas_top_5 / ventas_totales) * 100, 2) if ventas_totales > 0 else 0.0
 
@@ -341,6 +362,7 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
         },
         "categorias": lista_categorias,
         "tabla_mix": lista_productos,
+        "top_skus_rotacion": top_skus_rotacion,
         "top_vendidos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_vendidos],
         "top_facturacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ventas_usd": round(p["ventas_usd"], 2)} for p in top_facturacion],
         "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
