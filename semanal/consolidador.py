@@ -238,9 +238,10 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
         p["promedio_diario_unidades"] = round(p["unidades"] / dias_disponibles, 2)
 
     top_vendidos = sorted(lista_productos, key=lambda x: x["unidades"], reverse=True)[:5]
-    top_facturacion = sorted(lista_productos, key=lambda x: x["ventas_usd"], reverse=True)[:5]
     top_rentables = sorted(lista_productos, key=lambda x: x["ganancia_usd"], reverse=True)[:5]
-    top_baja_rotacion = sorted(lista_productos, key=lambda x: x["unidades"])[:5]
+    
+    # Cálculo interno para la concentración del top 5 de ventas
+    top_facturacion_calc = sorted(lista_productos, key=lambda x: x["ventas_usd"], reverse=True)[:5]
 
     # --- SECCIÓN: Selección de SKUs por unidades vendidas para la Guía de Rotación (máx 20) ---
     prods_elaborados = [p for p in lista_productos if p.get("tipo_origen") == "elaborado"]
@@ -263,7 +264,7 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
         "reventa": top_reventa
     }
 
-    ventas_top_5 = sum([p["ventas_usd"] for p in top_facturacion])
+    ventas_top_5 = sum([p["ventas_usd"] for p in top_facturacion_calc])
     concentracion_top_5 = round((ventas_top_5 / ventas_totales) * 100, 2) if ventas_totales > 0 else 0.0
 
     comportamiento_temporal_final = {}
@@ -323,53 +324,55 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
     resultado_afinidad = afinidades if afinidades else "No se detectaron patrones de frecuencia de compra"
 
     return {
-        "semana_id": semana_id,
-        "fechas_rango": fechas_rango,
-        "periodo": {
-            "fecha_inicio": fecha_inicio,
-            "fecha_fin": fecha_fin,
-            "dias_disponibles": dias_disponibles
+        "kpis_semana": {
+            "semana_id": semana_id,
+            "fechas_rango": fechas_rango,
+            "periodo": {
+                "fecha_inicio": fecha_inicio,
+                "fecha_fin": fecha_fin,
+                "dias_disponibles": dias_disponibles
+            },
+            "kpis_semanales": {
+                "venta_total_usd": round(ventas_totales, 2),
+                "costo_total_usd": round(costo_total, 2),
+                "ganancia_total_usd": round(ganancia_total, 2),
+                "margen_semanal_porcentaje": margen_semanal,
+                "total_facturas": facturas_totales,
+                "total_clientes": clientes_totales,
+                "ticket_promedio_usd": ticket_promedio_semanal,
+                "articulos_por_factura": articulos_por_factura_semanal,
+                "unidades_totales_vendidas": round(unidades_totales, 2),
+                "concentracion_top5_porcentaje": concentracion_top_5,
+                "desglose_origen": desglose_origen
+            },
+            "hitos_semanales": hitos_semanales,
+            "evolucion_diaria": evolucion_diaria,
+            "inventario": {
+                "unidades_inicio_semana": inv_inicial.get("total_unidades") or 0.0,
+                "unidades_fin_semana": inv_final.get("total_unidades") or 0.0,
+                "skus_activos_fin_semana": inv_final.get("total_skus") or 0,
+                "salud_inventario_porcentaje": inv_final.get("salud_del_inventario") or inv_final.get("salud_inventario") or 100.0,
+                "costo_inventario_usd": val_econ_final.get("valor_costo_total_usd") or 0.0,
+                "venta_potencial_usd": val_econ_final.get("valor_potencial_total_usd") or 0.0,
+                "ganancia_proyectada_usd": val_econ_final.get("ganancia_proyectada_usd") or 0.0,
+                "mermas_totales_unidades": round(mermas_totales_unidades, 2),
+                "mermas_totales_usd": round(mermas_totales_usd, 2),
+                "valor_en_riesgo_usd": inv_final.get("valor_en_riesgo") or 0.0,
+                "valor_vencido_usd": inv_final.get("valor_vencido") or 0.0,
+                "capital_estancado_total_costo_usd": total_cap_estancado_costo,
+                "capital_estancado_total_venta_usd": total_cap_estancado_venta
+            },
+            "categorias": lista_categorias,
+            "top_vendidos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_vendidos],
+            "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
+            "top_skus_sin_venta": top_skus_sin_venta,
+            "comportamiento_temporal": comportamiento_temporal_final,
+            "afinidad_productos": resultado_afinidad
         },
-        "kpis_semanales": {
-            "venta_total_usd": round(ventas_totales, 2),
-            "costo_total_usd": round(costo_total, 2),
-            "ganancia_total_usd": round(ganancia_total, 2),
-            "margen_semanal_porcentaje": margen_semanal,
-            "total_facturas": facturas_totales,
-            "total_clientes": clientes_totales,
-            "ticket_promedio_usd": ticket_promedio_semanal,
-            "articulos_por_factura": articulos_por_factura_semanal,
-            "unidades_totales_vendidas": round(unidades_totales, 2),
-            "concentracion_top5_porcentaje": concentracion_top_5,
-            "desglose_origen": desglose_origen
-        },
-        "hitos_semanales": hitos_semanales,
-        "evolucion_diaria": evolucion_diaria,
-        "inventario": {
-            "unidades_inicio_semana": inv_inicial.get("total_unidades") or 0.0,
-            "unidades_fin_semana": inv_final.get("total_unidades") or 0.0,
-            "skus_activos_fin_semana": inv_final.get("total_skus") or 0,
-            "salud_inventario_porcentaje": inv_final.get("salud_del_inventario") or inv_final.get("salud_inventario") or 100.0,
-            "costo_inventario_usd": val_econ_final.get("valor_costo_total_usd") or 0.0,
-            "venta_potencial_usd": val_econ_final.get("valor_potencial_total_usd") or 0.0,
-            "ganancia_proyectada_usd": val_econ_final.get("ganancia_proyectada_usd") or 0.0,
-            "mermas_totales_unidades": round(mermas_totales_unidades, 2),
-            "mermas_totales_usd": round(mermas_totales_usd, 2),
-            "valor_en_riesgo_usd": inv_final.get("valor_en_riesgo") or 0.0,
-            "valor_vencido_usd": inv_final.get("valor_vencido") or 0.0,
-            "capital_estancado_total_costo_usd": total_cap_estancado_costo,
-            "capital_estancado_total_venta_usd": total_cap_estancado_venta
-        },
-        "categorias": lista_categorias,
-        "tabla_mix": lista_productos,
-        "top_skus_rotacion": top_skus_rotacion,
-        "top_vendidos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_vendidos],
-        "top_facturacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ventas_usd": round(p["ventas_usd"], 2)} for p in top_facturacion],
-        "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
-        "top_baja_rotacion": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_baja_rotacion],
-        "top_skus_sin_venta": top_skus_sin_venta,
-        "comportamiento_temporal": comportamiento_temporal_final,
-        "afinidad_productos": resultado_afinidad
+        "datos_rotacion": {
+            "tabla_mix": lista_productos,
+            "top_skus_rotacion": top_skus_rotacion
+        }
     }
 
 
