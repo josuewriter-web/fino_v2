@@ -1,23 +1,61 @@
+from datetime import datetime
+from typing import Any, Dict, Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-app = FastAPI()
+app = FastAPI(title="Comparador Semanal API")
 
-# Claves que se ignoran completamente
-LLAVES_IGNORADAS = {"tabla_mix", "top_skus_rotacion"}
+
+def parsear_fecha(fecha_str):
+    if not fecha_str:
+        return datetime.min
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(fecha_str, fmt)
+        except ValueError:
+            pass
+    return datetime.min
+
+
+def extraer_kpis(semana_dict: dict) -> dict:
+    """Extrae el bloque kpis_semana si viene anidado en la raíz, o lo retorna directo."""
+    if not isinstance(semana_dict, dict):
+        return {}
+    return semana_dict.get("kpis_semana", semana_dict)
+
+
+def obtener_identificadores(act_kpis, semana_actual_raw):
+    """Calcula automáticamente semana_id y fechas_rango si no vienen en el JSON."""
+    semana_id = act_kpis.get("semana_id") or semana_actual_raw.get("semana_id")
+    fechas_rango = act_kpis.get("fechas_rango") or semana_actual_raw.get("fechas_rango")
+
+    periodo = act_kpis.get("periodo", {})
+    f_ini = periodo.get("fecha_inicio")
+    f_fin = periodo.get("fecha_fin")
+
+    if not fechas_rango and f_ini and f_fin:
+        fechas_rango = f"{f_ini} al {f_fin}" if f_ini != f_fin else f_ini
+
+    if not semana_id and f_ini:
+        dt = parsear_fecha(f_ini)
+        if dt != datetime.min:
+            iso_year, iso_week, _ = dt.isocalendar()
+            semana_id = f"{iso_year}-W{iso_week:02d}"
+        else:
+            semana_id = "Semana-Desconocida"
+
+    return semana_id, fechas_rango
 
 
 def calc_variacion(actual, anterior):
+    """Calcula el cambio absoluto y la variación porcentual."""
     if actual is None and anterior is None:
         return None, None
     if actual is None or anterior is None:
         return None, None
 
     diff = actual - anterior
-    if anterior == 0:
-        pct = None
-    else:
-        pct = round((diff / abs(anterior)) * 100, 2)
+    pct = None if anterior == 0 else round((diff / abs(anterior)) * 100, 2)
 
     diff_val = (
         int(diff)
@@ -31,9 +69,9 @@ def comparar_bloque_kpis(dict_actual, dict_anterior):
     dict_actual = dict_actual or {}
     dict_anterior = dict_anterior or {}
 
-    todas_las_llaves = (
-        set(dict_actual.keys()).union(set(dict_anterior.keys()))
-    ) - LLAVES_IGNORADAS
+    todas_las_llaves = set(dict_actual.keys()).union(set(dict_anterior.keys()))
+    todas_las_llaves.discard("concentracion_top5_porcentaje")
+
     resultado = {}
 
     for key in todas_las_llaves:
@@ -42,9 +80,7 @@ def comparar_bloque_kpis(dict_actual, dict_anterior):
 
         if isinstance(val_act, dict) or isinstance(val_ant, dict):
             resultado[key] = comparar_bloque_kpis(val_act, val_ant)
-        elif isinstance(val_act, (int, float)) or isinstance(
-            val_ant, (int, float)
-        ):
+        elif isinstance(val_act, (int, float)) or isinstance(val_ant, (int, float)):
             abs_change, pct_change = calc_variacion(val_act, val_ant)
             resultado[key] = {
                 "anterior": val_ant,
@@ -54,38 +90,6 @@ def comparar_bloque_kpis(dict_actual, dict_anterior):
             }
         else:
             resultado[key] = {"anterior": val_ant, "actual": val_act}
-    return resultado
-
-
-def comparar_evolucion_diaria(act_list, ant_list):
-    act_list = act_list or []
-    ant_list = ant_list or []
-    max_dias = max(len(act_list), len(ant_list))
-
-    resultado = []
-    campos_num = ["ventas_usd", "facturas", "ticket_promedio"]
-
-    for i in range(max_dias):
-        act = act_list[i] if i < len(act_list) else {}
-        ant = ant_list[i] if i < len(ant_list) else {}
-
-        res_dia = {
-            "dia_numero": i + 1,
-            "fecha_actual": act.get("fecha"),
-            "fecha_anterior": ant.get("fecha"),
-        }
-
-        for campo in campos_num:
-            v_act = act.get(campo)
-            v_ant = ant.get(campo)
-            abs_c, pct_c = calc_variacion(v_act, v_ant)
-            res_dia[campo] = {
-                "anterior": v_ant,
-                "actual": v_act,
-                "cambio_absoluto": abs_c,
-                "variacion_porcentual": pct_c,
-            }
-        resultado.append(res_dia)
     return resultado
 
 
@@ -145,95 +149,6 @@ def comparar_categorias(cats_actual, cats_anterior):
     return resultado
 
 
-def comparar_ranking(actual_list, anterior_list, campo_valor):
-    actual_list = actual_list or []
-    anterior_list = anterior_list or []
-
-    get_id = lambda p: p.get("codigo") or p.get("codigo_articulo") or p.get("nombre")
-
-    act_map = {
-        get_id(p): (idx + 1, p)
-        for idx, p in enumerate(actual_list)
-        if get_id(p)
-    }
-    ant_map = {
-        get_id(p): (idx + 1, p)
-        for idx, p in enumerate(anterior_list)
-        if get_id(p)
-    }
-
-    todos_ids = set(act_map.keys()).union(set(ant_map.keys()))
-    items = []
-
-    for identifier in todos_ids:
-        act_info = act_map.get(identifier)
-        ant_info = ant_map.get(identifier)
-
-        if act_info and ant_info:
-            pos_act, p_act = act_info
-            pos_ant, p_ant = ant_info
-            shift = pos_ant - pos_act
-            estado = "subio" if shift > 0 else ("bajo" if shift < 0 else "mantiene")
-
-            v_act = p_act.get(campo_valor)
-            v_ant = p_ant.get(campo_valor)
-            abs_c, pct_c = calc_variacion(v_act, v_ant)
-
-            items.append(
-                {
-                    "codigo": p_act.get("codigo")
-                    or p_act.get("codigo_articulo")
-                    or p_ant.get("codigo")
-                    or p_ant.get("codigo_articulo"),
-                    "nombre": p_act.get("nombre", p_ant.get("nombre")),
-                    "estado": estado,
-                    "posicion_anterior": pos_ant,
-                    "posicion_actual": pos_act,
-                    "cambio_posicion": shift,
-                    "valor_anterior": v_ant,
-                    "valor_actual": v_act,
-                    "cambio_absoluto": abs_c,
-                    "variacion_porcentual": pct_c,
-                }
-            )
-        elif act_info:
-            pos_act, p_act = act_info
-            items.append(
-                {
-                    "codigo": p_act.get("codigo") or p_act.get("codigo_articulo"),
-                    "nombre": p_act.get("nombre"),
-                    "estado": "nuevo",
-                    "posicion_anterior": None,
-                    "posicion_actual": pos_act,
-                    "cambio_posicion": None,
-                    "valor_anterior": None,
-                    "valor_actual": p_act.get(campo_valor),
-                    "cambio_absoluto": None,
-                    "variacion_porcentual": None,
-                }
-            )
-        else:
-            pos_ant, p_ant = ant_info
-            items.append(
-                {
-                    "codigo": p_ant.get("codigo") or p_ant.get("codigo_articulo"),
-                    "nombre": p_ant.get("nombre"),
-                    "estado": "salio",
-                    "posicion_anterior": pos_ant,
-                    "posicion_actual": None,
-                    "cambio_posicion": None,
-                    "valor_anterior": p_ant.get(campo_valor),
-                    "valor_actual": None,
-                    "cambio_absoluto": None,
-                    "variacion_porcentual": None,
-                }
-            )
-
-    return sorted(
-        items, key=lambda x: (x["posicion_actual"] is None, x["posicion_actual"] or 999)
-    )
-
-
 def comparar_comportamiento_temporal(temp_act, temp_ant):
     temp_act = temp_act or {}
     temp_ant = temp_ant or {}
@@ -256,124 +171,91 @@ def comparar_comportamiento_temporal(temp_act, temp_ant):
                 "variacion_porcentual": pct_c,
             }
 
-        prods_act = act.get("top_productos", [])
-        prods_ant = ant.get("top_productos", [])
-        prods_comp = comparar_ranking(prods_act, prods_ant, "unidades")
+        resultado[b] = metricas
+    return resultado
 
-        resultado[b] = {"metricas": metricas, "top_productos": prods_comp}
+
+def extraer_top_productos_temporales(temp_act):
+    """Extrae únicamente las listas de top productos vendidos por cada bloque horario."""
+    temp_act = temp_act or {}
+    resultado = {}
+    for turno, datos in temp_act.items():
+        if isinstance(datos, dict):
+            resultado[turno] = datos.get("top_productos", [])
     return resultado
 
 
 def comparar_semanas(semana_actual, semana_pasada):
-    if (
-        not semana_pasada
-        or not isinstance(semana_pasada, dict)
-        or not semana_pasada.get("periodo")
-    ):
-        semana_limpia = {
-            k: v
-            for k, v in (semana_actual or {}).items()
-            if k not in LLAVES_IGNORADAS
-        }
+    act_kpis = extraer_kpis(semana_actual)
+    pas_kpis = extraer_kpis(semana_pasada)
+
+    semana_id, fechas_rango = obtener_identificadores(act_kpis, semana_actual)
+    comparacion_disponible = bool(
+        pas_kpis and isinstance(pas_kpis, dict) and pas_kpis.get("periodo")
+    )
+
+    top_prods_temporal = extraer_top_productos_temporales(
+        act_kpis.get("comportamiento_temporal", {})
+    )
+
+    # Sección datos_semana (SOLO DATOS CRUDOS DE LA SEMANA ACTUAL)
+    datos_semana = {
+        "comparacion_disponible": comparacion_disponible,
+        "semana_id": semana_id,
+        "fechas_rango": fechas_rango,
+        "periodo": act_kpis.get("periodo", {}),
+        "hitos_semanales": act_kpis.get("hitos_semanales", {}),
+        "evolucion_diaria": act_kpis.get("evolucion_diaria", []),
+        "tops": {
+            "top_vendidos": act_kpis.get("top_vendidos", []),
+            "top_rentables": act_kpis.get("top_rentables", []),
+            "top_skus_sin_venta": act_kpis.get("top_skus_sin_venta", []),
+        },
+        "comportamiento_temporal_productos": top_prods_temporal,
+        "afinidad_productos": act_kpis.get("afinidad_productos"),
+    }
+
+    if not comparacion_disponible:
+        datos_semana["mensaje"] = "No se proporcionó información válida de la semana pasada."
         return {
-            "comparacion_disponible": False,
-            "mensaje": "No se proporcionó información válida de la semana pasada.",
-            "periodo_actual": semana_actual.get("periodo", {})
-            if isinstance(semana_actual, dict)
-            else {},
-            "periodo_anterior": None,
-            "datos_semana_actual": semana_limpia,
+            "datos_semana": datos_semana,
+            "metricas_comparadas": {
+                "datos_semana_actual": act_kpis
+            },
         }
-
-    semana_actual = semana_actual or {}
-
-    c_act = semana_actual.get("kpis_semanales", {}).get(
-        "concentracion_top5_porcentaje"
-    )
-    c_ant = semana_pasada.get("kpis_semanales", {}).get(
-        "concentracion_top5_porcentaje"
-    )
-    c_abs, c_pct = calc_variacion(c_act, c_ant)
-
-    af_act = semana_actual.get("afinidad_productos")
-    af_ant = semana_pasada.get("afinidad_productos")
 
     return {
-        "comparacion_disponible": True,
-        "periodo_actual": semana_actual.get("periodo", {}),
-        "periodo_anterior": semana_pasada.get("periodo", {}),
-        "kpis_semanales": comparar_bloque_kpis(
-            semana_actual.get("kpis_semanales"), semana_pasada.get("kpis_semanales")
-        ),
-        "evolucion_diaria": {
-            "registros_diarios_comparados": comparar_evolucion_diaria(
-                semana_actual.get("evolucion_diaria", []),
-                semana_pasada.get("evolucion_diaria", []),
+        "datos_semana": datos_semana,
+        "metricas_comparadas": {
+            "kpis_semanales": comparar_bloque_kpis(
+                act_kpis.get("kpis_semanales"), pas_kpis.get("kpis_semanales")
             ),
-            "hitos_semana_actual": semana_actual.get("hitos_semanales", {}),
-            "hitos_semana_anterior": semana_pasada.get("hitos_semanales", {}),
-        },
-        "inventario": comparar_bloque_kpis(
-            semana_actual.get("inventario"), semana_pasada.get("inventario")
-        ),
-        "categorias": comparar_categorias(
-            semana_actual.get("categorias"), semana_pasada.get("categorias")
-        ),
-        "top_vendidos": comparar_ranking(
-            semana_actual.get("top_vendidos"),
-            semana_pasada.get("top_vendidos"),
-            "unidades",
-        ),
-        "top_facturacion": comparar_ranking(
-            semana_actual.get("top_facturacion"),
-            semana_pasada.get("top_facturacion"),
-            "ventas_usd",
-        ),
-        "top_rentables": comparar_ranking(
-            semana_actual.get("top_rentables"),
-            semana_pasada.get("top_rentables"),
-            "ganancia_usd",
-        ),
-        "top_baja_rotacion": comparar_ranking(
-            semana_actual.get("top_baja_rotacion"),
-            semana_pasada.get("top_baja_rotacion"),
-            "unidades",
-        ),
-        "top_skus_sin_venta": comparar_ranking(
-            semana_actual.get("top_skus_sin_venta"),
-            semana_pasada.get("top_skus_sin_venta"),
-            "capital_estancado_costo_usd",
-        ),
-        "comportamiento_temporal": comparar_comportamiento_temporal(
-            semana_actual.get("comportamiento_temporal"),
-            semana_pasada.get("comportamiento_temporal"),
-        ),
-        "concentracion": {
-            "anterior": c_ant,
-            "actual": c_act,
-            "cambio_puntos_porcentuales": c_abs,
-            "variacion_porcentual": c_pct,
-        },
-        "afinidad_productos": {
-            "anterior": af_ant,
-            "actual": af_act,
-            "diferencias_detectadas": af_act != af_ant,
+            "inventario": comparar_bloque_kpis(
+                act_kpis.get("inventario"), pas_kpis.get("inventario")
+            ),
+            "categorias": comparar_categorias(
+                act_kpis.get("categorias"), pas_kpis.get("categorias")
+            ),
+            "comportamiento_temporal": comparar_comportamiento_temporal(
+                act_kpis.get("comportamiento_temporal"),
+                pas_kpis.get("comportamiento_temporal"),
+            ),
         },
     }
 
 
-# --- RUTA DE LA API PARA MAKE ---
-
-@app.post("/comparar")
-async def api_comparar(request: Request):
-    data = await request.json()
-    semana_actual = data.get("semana_actual", {})
-    semana_pasada = data.get("semana_pasada", {})
-    
-    resultado = comparar_semanas(semana_actual, semana_pasada)
-    return JSONResponse(content=resultado)
-
+# --- RUTAS DE LA API ---
 
 @app.get("/")
 def home():
     return {"status": "ok", "message": "API Comparador activa"}
+
+
+@app.post("/comparar")
+async def api_comparar(request: Request):
+    data = await request.json()
+    semana_actual = data.get("semana_actual", data)
+    semana_pasada = data.get("semana_pasada")
+
+    resultado = comparar_semanas(semana_actual, semana_pasada)
+    return JSONResponse(content=resultado)
