@@ -1,5 +1,6 @@
 import re
-from fastapi import FastAPI, UploadFile, File, Form, Response, Request
+from fastapi import FastAPI, UploadFile, File, Form, Response, Request, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Dict, Any, Optional, Union, List
 from weasyprint import HTML
@@ -12,6 +13,10 @@ from scripts.control_inventario import ejecutar_control_inventario
 from scripts.motor_financiero import ejecutar_motor_financiero
 from scripts.motor_estado import ejecutar_motor_estado
 
+# Importaciones del flujo semanal
+from scripts.consolidador import procesar_semana
+from scripts.comparador import comparar_semanas
+
 app = FastAPI()
 
 # Función auxiliar para emojis en PDF
@@ -23,7 +28,7 @@ def cambiar_emojis_por_fotos(texto_html: str) -> str:
         return f'<img src="{url_foto}" style="width: 1.1em; height: 1.1em; vertical-align: middle; margin-right: 3px;" />'
     return patron.sub(reemplazar, texto_html)
 
-# Modelos para endpoints
+# Modelos para endpoints diarios
 class PayloadCatalogador(BaseModel):
     ventas: Dict[str, Any]
     inventario: Dict[str, Any]
@@ -51,6 +56,8 @@ class PayloadMotorEstado(BaseModel):
     kpis_inventario: Dict[str, Any]
     fecha: Optional[str] = None
 
+
+# --- ENDPOINTS FLUJO DIARIO ---
 
 # Endpoint 1: Buscar Tasa BCV
 @app.get("/bcv")
@@ -123,6 +130,30 @@ async def endpoint_motor_estado(payload: PayloadMotorEstado):
         payload.kpis_inventario,
         payload.fecha
     )
+
+
+# --- ENDPOINTS FLUJO SEMANAL ---
+
+# Endpoint 9: Procesar Semana (Consolidador)
+@app.post("/procesar-semana")
+def api_procesar_semana(payload: Union[List[Dict[str, Any]], Dict[str, Any]], key: Optional[str] = None):
+    resultado = procesar_semana(payload)
+    if isinstance(resultado, dict) and "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+
+# Endpoint 10: Comparar Semanas (Comparador)
+@app.post("/comparar")
+async def api_comparar(request: Request):
+    data = await request.json()
+    semana_actual = data.get("semana_actual", data)
+    semana_pasada = data.get("semana_pasada")
+
+    resultado = comparar_semanas(semana_actual, semana_pasada)
+    return JSONResponse(content=resultado)
+
+
+# --- ENDPOINT COMPARTIDO / UTILIDAD ---
 
 # Endpoint 8: Convertir PDF (WeasyPrint)
 @app.post("/convertir")
