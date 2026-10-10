@@ -1,0 +1,390 @@
+import json
+from datetime import datetime
+from typing import Any, Dict, List, Union
+from fastapi import FastAPI, HTTPException
+
+DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
+app = FastAPI(title="Consolidador Semanal API")
+
+
+def calcular_margen(ganancia: float, ventas: float) -> float:
+    if ventas > 0:
+        return round((ganancia / ventas) * 100, 2)
+    return 0.0
+
+
+def parsear_fecha(fecha_str: str) -> datetime:
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(fecha_str, fmt)
+        except ValueError:
+            pass
+    return datetime.min
+
+
+def obtener_nombre_dia(fecha_str: str) -> str:
+    dt = parsear_fecha(fecha_str)
+    if dt != datetime.min:
+        return DIAS_SEMANA[dt.weekday()]
+    return "desconocido"
+
+
+def obtener_dict_inv(dia: dict) -> dict:
+    inv = dia.get("kpis_inventario", {})
+    if isinstance(inv, dict) and "generales" in inv and isinstance(inv["generales"], dict):
+        res = inv["generales"].copy()
+        for k, v in inv.items():
+            if k != "generales" and k not in res:
+                res[k] = v
+        return res
+    return inv if isinstance(inv, dict) else {}
+
+
+def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
+    # Si Make envía el JSON como texto plano (string), lo convertimos a objeto
+    if isinstance(dias_json, str):
+        try:
+            dias_json = json.loads(dias_json)
+        except Exception:
+            return {"error": "El cuerpo de la petición no es un JSON válido"}
+
+    if isinstance(dias_json, dict):
+        dias_json = [dias_json]
+
+    if not dias_json or not isinstance(dias_json, list):
+        return {"error": "Se esperaba un reporte diario o una lista de reportes"}
+
+    dias_ordenados = sorted(
+        [d for d in dias_json if isinstance(d, dict) and "informacion_sistema" in d],
+        key=lambda x: parsear_fecha(x["informacion_sistema"]["fecha_reporte"])
+    )
+    
+    dias_disponibles = len(dias_ordenados)
+    if dias_disponibles == 0:
+        return {"error": "No se encontraron datos diarios válidos"}
+
+    fecha_inicio = dias_ordenados[0]["informacion_sistema"]["fecha_reporte"]
+    fecha_fin = dias_ordenados[-1]["informacion_sistema"]["fecha_reporte"]
+
+    # Generar identificadores automáticos para la memoria de rotación
+    dt_inicio = parsear_fecha(fecha_inicio)
+    if dt_inicio != datetime.min:
+        iso_year, iso_week, _ = dt_inicio.isocalendar()
+        semana_id = f"{iso_year}-W{iso_week:02d}"
+    else:
+        semana_id = "Semana-Desconocida"
+
+    fechas_rango = f"{fecha_inicio} al {fecha_fin}" if fecha_inicio != fecha_fin else fecha_inicio
+
+    ventas_totales = 0.0
+    costo_total = 0.0
+    ganancia_total = 0.0
+    clientes_totales = 0
+    facturas_totales = 0
+    unidades_totales = 0.0
+
+    desglose_origen = {
+        "elaborado": {"ventas_usd": 0.0, "costo_usd": 0.0, "ganancia_usd": 0.0, "unidades": 0.0},
+        "reventa": {"ventas_usd": 0.0, "costo_usd": 0.0, "ganancia_usd": 0.0, "unidades": 0.0}
+    }
+    
+    evolucion_diaria = []
+    categorias_dict = {}
+    productos_dict = {}
+    
+    bloques = {
+        "mañana": {"ventas": 0.0, "facturas": 0, "productos": {}}, 
+        "tarde": {"ventas": 0.0, "facturas": 0, "productos": {}}, 
+        "noche": {"ventas": 0.0, "facturas": 0, "productos": {}}
+    }
+
+    for dia in dias_ordenados:
+        fecha = dia["informacion_sistema"]["fecha_reporte"]
+        nombre_dia = obtener_nombre_dia(fecha)
+        fin = dia.get("kpis_financieros", {})
+        
+        v_dia = fin.get("venta_total_usd") or 0.0
+        c_dia = fin.get("costo_de_ventas_usd") or 0.0
+        g_dia = fin.get("ganancia_real_usd") or 0.0
+        cli_dia = fin.get("total_clientes") or 0
+        fac_dia = fin.get("total_facturas") or 0
+        u_dia = fin.get("unidades_vendidas") or fin.get("articulos_vendidos") or 0.0
+
+        ventas_totales += v_dia
+        costo_total += c_dia
+        ganancia_total += g_dia
+        clientes_totales += cli_dia
+        facturas_totales += fac_dia
+        unidades_totales += u_dia
+
+        desglose_dia = fin.get("desglose_origen", {})
+        for origen in ["elaborado", "reventa"]:
+            if origen in desglose_dia:
+                desglose_origen[origen]["ventas_usd"] += desglose_dia[origen].get("ventas_usd") or 0.0
+                desglose_origen[origen]["costo_usd"] += desglose_dia[origen].get("costo_usd") or 0.0
+                desglose_origen[origen]["ganancia_usd"] += desglose_dia[origen].get("ganancia_usd") or 0.0
+                desglose_origen[origen]["unidades"] += (
+                    desglose_dia[origen].get("unidades_vendidas")
+                    or desglose_dia[origen].get("unidades")
+                    or 0.0
+                )
+        
+        evolucion_diaria.append({
+            "fecha": fecha,
+            "dia_semana": nombre_dia,
+            "ventas_usd": round(v_dia, 2),
+            "facturas": fac_dia,
+            "ticket_promedio": fin.get("ticket_promedio_usd") or 0.0
+        })
+
+        for cat in dia.get("categorias", []):
+            nombre = cat.get("categoria", "Sin categoría")
+            if nombre not in categorias_dict:
+                categorias_dict[nombre] = {
+                    "ventas_usd": 0.0, 
+                    "costo_usd": 0.0, 
+                    "ganancia_usd": 0.0, 
+                    "unidades": 0.0, 
+                    "dias_presente": 0
+                }
+            
+            categorias_dict[nombre]["ventas_usd"] += cat.get("ventas_usd") or 0.0
+            categorias_dict[nombre]["costo_usd"] += cat.get("costo_usd") or 0.0
+            categorias_dict[nombre]["ganancia_usd"] += cat.get("ganancia_usd") or 0.0
+            categorias_dict[nombre]["unidades"] += cat.get("unidades_vendidas") or cat.get("cantidad_vendida") or 0.0
+            categorias_dict[nombre]["dias_presente"] += 1
+
+        for prod in dia.get("tabla_mix", []):
+            codigo = str(prod.get("codigo_articulo", "")).strip()
+            tipo_origen = prod.get("tipo_origen") or prod.get("origen") or "reventa"
+            cant_vendida = prod.get("cantidad_vendida") or prod.get("unidades_vendidas") or 0.0
+            
+            if codigo not in productos_dict:
+                productos_dict[codigo] = {
+                    "codigo_articulo": codigo,
+                    "nombre": prod.get("nombre", "Desconocido"),
+                    "categoria": prod.get("categoria", "General"),
+                    "tipo_origen": tipo_origen,
+                    "semana_id": semana_id,
+                    "fechas_rango": fechas_rango,
+                    "ventas_usd": 0.0, 
+                    "costo_usd": 0.0, 
+                    "ganancia_usd": 0.0, 
+                    "unidades": 0.0, 
+                    "dias_vendido": 0,
+                    "ventas_diarias": {}
+                }
+            
+            productos_dict[codigo]["ventas_usd"] += prod.get("ventas_usd") or 0.0
+            productos_dict[codigo]["costo_usd"] += prod.get("costo_usd") or 0.0
+            productos_dict[codigo]["ganancia_usd"] += prod.get("ganancia_usd") or 0.0
+            productos_dict[codigo]["unidades"] += cant_vendida
+            productos_dict[codigo]["dias_vendido"] += 1
+            
+            productos_dict[codigo]["ventas_diarias"][fecha] = {
+                "dia_semana": nombre_dia,
+                "unidades": cant_vendida
+            }
+
+        temp = dia.get("comportamiento_temporal", {})
+        for turno in ["mañana", "tarde", "noche"]:
+            if turno in temp:
+                bloques[turno]["ventas"] += temp[turno].get("ventas_usd") or 0.0
+                bloques[turno]["facturas"] += temp[turno].get("cantidad_facturas") or 0
+                
+                prods_turno = temp[turno].get("articulos") or temp[turno].get("productos") or temp[turno].get("top_productos", [])
+                for p in prods_turno:
+                    cod = str(p.get("codigo_articulo") or p.get("codigo") or p.get("nombre", "")).strip()
+                    nom = p.get("nombre", cod)
+                    cant = p.get("unidades") or p.get("cantidad") or p.get("cantidad_vendida") or 0.0
+                    if cod not in bloques[turno]["productos"]:
+                        bloques[turno]["productos"][cod] = {"nombre": nom, "unidades": 0.0}
+                    bloques[turno]["productos"][cod]["unidades"] += cant
+
+    margen_semanal = calcular_margen(ganancia_total, ventas_totales)
+    ticket_promedio_semanal = round(ventas_totales / facturas_totales, 2) if facturas_totales > 0 else 0.0
+    articulos_por_factura_semanal = round(unidades_totales / facturas_totales, 2) if facturas_totales > 0 else 0.0
+    
+    for origen in desglose_origen:
+        v_orig = desglose_origen[origen]["ventas_usd"]
+        g_orig = desglose_origen[origen]["ganancia_usd"]
+        desglose_origen[origen]["ventas_usd"] = round(v_orig, 2)
+        desglose_origen[origen]["costo_usd"] = round(desglose_origen[origen]["costo_usd"], 2)
+        desglose_origen[origen]["ganancia_usd"] = round(g_orig, 2)
+        desglose_origen[origen]["unidades"] = round(desglose_origen[origen]["unidades"], 2)
+        desglose_origen[origen]["margen_porcentaje"] = calcular_margen(g_orig, v_orig)
+
+    dia_max = max(evolucion_diaria, key=lambda x: x["ventas_usd"])
+    dia_min = min(evolucion_diaria, key=lambda x: x["ventas_usd"])
+    hitos_semanales = {
+        "mejor_dia": {"fecha": dia_max["fecha"], "dia_semana": dia_max["dia_semana"], "ventas_usd": round(dia_max["ventas_usd"], 2)},
+        "peor_dia": {"fecha": dia_min["fecha"], "dia_semana": dia_min["dia_semana"], "ventas_usd": round(dia_min["ventas_usd"], 2)}
+    }
+
+    lista_categorias = []
+    for nombre, datos in categorias_dict.items():
+        datos["margen_porcentaje"] = calcular_margen(datos["ganancia_usd"], datos["ventas_usd"])
+        datos["participacion_porcentaje"] = round((datos["ventas_usd"] / ventas_totales) * 100, 2) if ventas_totales > 0 else 0.0
+        datos["categoria"] = nombre
+        lista_categorias.append(datos)
+    
+    lista_categorias.sort(key=lambda x: x["ventas_usd"], reverse=True)
+
+    lista_productos = list(productos_dict.values())
+    for p in lista_productos:
+        p["margen_porcentaje"] = calcular_margen(p["ganancia_usd"], p["ventas_usd"])
+        p["participacion_porcentaje"] = round((p["ventas_usd"] / ventas_totales) * 100, 2) if ventas_totales > 0 else 0.0
+        p["promedio_diario_unidades"] = round(p["unidades"] / dias_disponibles, 2)
+
+    top_vendidos = sorted(lista_productos, key=lambda x: x["unidades"], reverse=True)[:5]
+    top_rentables = sorted(lista_productos, key=lambda x: x["ganancia_usd"], reverse=True)[:5]
+    
+    # Cálculo interno para la concentración del top 5 de ventas
+    top_facturacion_calc = sorted(lista_productos, key=lambda x: x["ventas_usd"], reverse=True)[:5]
+
+    # --- SECCIÓN: Selección de SKUs por unidades vendidas para la Guía de Rotación (máx 20) ---
+    prods_elaborados = [p for p in lista_productos if p.get("tipo_origen") == "elaborado"]
+    prods_reventa = [p for p in lista_productos if p.get("tipo_origen") != "elaborado"]
+
+    top_elaborados = sorted(
+        prods_elaborados, 
+        key=lambda x: (x["unidades"], x["ventas_usd"]), 
+        reverse=True
+    )[:20]
+    
+    top_reventa = sorted(
+        prods_reventa, 
+        key=lambda x: (x["unidades"], x["ventas_usd"]), 
+        reverse=True
+    )[:20]
+
+    top_skus_rotacion = {
+        "elaborados": top_elaborados,
+        "reventa": top_reventa
+    }
+
+    ventas_top_5 = sum([p["ventas_usd"] for p in top_facturacion_calc])
+    concentracion_top_5 = round((ventas_top_5 / ventas_totales) * 100, 2) if ventas_totales > 0 else 0.0
+
+    comportamiento_temporal_final = {}
+    for turno in bloques:
+        f_turno = bloques[turno]["facturas"]
+        t_prom = round(bloques[turno]["ventas"] / f_turno, 2) if f_turno > 0 else 0.0
+        
+        prods_turno_list = list(bloques[turno]["productos"].values())
+        top_5_turno = sorted(prods_turno_list, key=lambda x: x["unidades"], reverse=True)[:5]
+        
+        comportamiento_temporal_final[turno] = {
+            "ventas": round(bloques[turno]["ventas"], 2),
+            "facturas": f_turno,
+            "ticket_promedio": t_prom,
+            "top_productos": [{"nombre": p["nombre"], "unidades": round(p["unidades"], 2)} for p in top_5_turno]
+        }
+
+    inv_inicial = obtener_dict_inv(dias_ordenados[0])
+    inv_final = obtener_dict_inv(dias_ordenados[-1])
+    val_econ_final = dias_ordenados[-1].get("valor_economico_inventario", {})
+    
+    mermas_totales_unidades = sum([obtener_dict_inv(d).get("mermas_detectadas_unidades") or 0.0 for d in dias_ordenados])
+    mermas_totales_usd = sum([obtener_dict_inv(d).get("mermas_detectadas_usd") or 0.0 for d in dias_ordenados])
+
+    raw_skus_sin_venta = inv_final.get("skus_sin_venta", [])
+    processed_sin_venta = []
+    for sku in raw_skus_sin_venta:
+        cod = str(sku.get("codigo_articulo", "")).strip()
+        nom = sku.get("nombre", "")
+        stk = sku.get("stock") or 0.0
+        c_un = sku.get("costo_unidad_usd") or 0.0
+        p_un = sku.get("precio_venta_usd") or 0.0
+
+        cap_costo = round(stk * c_un, 2)
+        cap_venta = round(stk * p_un, 2)
+
+        processed_sin_venta.append({
+            "codigo": cod,
+            "nombre": nom,
+            "stock": stk,
+            "costo_unidad_usd": c_un,
+            "precio_venta_usd": p_un,
+            "capital_estancado_costo_usd": cap_costo,
+            "capital_estancado_venta_usd": cap_venta
+        })
+
+    top_skus_sin_venta = sorted(
+        processed_sin_venta,
+        key=lambda x: (x["capital_estancado_costo_usd"], x["capital_estancado_venta_usd"], x["stock"]),
+        reverse=True
+    )[:5]
+
+    total_cap_estancado_costo = round(sum(p["capital_estancado_costo_usd"] for p in processed_sin_venta), 2)
+    total_cap_estancado_venta = round(sum(p["capital_estancado_venta_usd"] for p in processed_sin_venta), 2)
+
+    afinidades = [d.get("afinidad_productos") for d in dias_ordenados if d.get("afinidad_productos") and d.get("afinidad_productos") != "No se detectaron patrones de frecuencia de compra"]
+    resultado_afinidad = afinidades if afinidades else "No se detectaron patrones de frecuencia de compra"
+
+    return {
+        "kpis_semana": {
+            "semana_id": semana_id,
+            "fechas_rango": fechas_rango,
+            "periodo": {
+                "fecha_inicio": fecha_inicio,
+                "fecha_fin": fecha_fin,
+                "dias_disponibles": dias_disponibles
+            },
+            "kpis_semanales": {
+                "venta_total_usd": round(ventas_totales, 2),
+                "costo_total_usd": round(costo_total, 2),
+                "ganancia_total_usd": round(ganancia_total, 2),
+                "margen_semanal_porcentaje": margen_semanal,
+                "total_facturas": facturas_totales,
+                "total_clientes": clientes_totales,
+                "ticket_promedio_usd": ticket_promedio_semanal,
+                "articulos_por_factura": articulos_por_factura_semanal,
+                "unidades_totales_vendidas": round(unidades_totales, 2),
+                "concentracion_top5_porcentaje": concentracion_top_5,
+                "desglose_origen": desglose_origen
+            },
+            "hitos_semanales": hitos_semanales,
+            "evolucion_diaria": evolucion_diaria,
+            "inventario": {
+                "unidades_inicio_semana": inv_inicial.get("total_unidades") or 0.0,
+                "unidades_fin_semana": inv_final.get("total_unidades") or 0.0,
+                "skus_activos_fin_semana": inv_final.get("total_skus") or 0,
+                "salud_inventario_porcentaje": inv_final.get("salud_del_inventario") or inv_final.get("salud_inventario") or 100.0,
+                "costo_inventario_usd": val_econ_final.get("valor_costo_total_usd") or 0.0,
+                "venta_potencial_usd": val_econ_final.get("valor_potencial_total_usd") or 0.0,
+                "ganancia_proyectada_usd": val_econ_final.get("ganancia_proyectada_usd") or 0.0,
+                "mermas_totales_unidades": round(mermas_totales_unidades, 2),
+                "mermas_totales_usd": round(mermas_totales_usd, 2),
+                "valor_en_riesgo_usd": inv_final.get("valor_en_riesgo") or 0.0,
+                "valor_vencido_usd": inv_final.get("valor_vencido") or 0.0,
+                "capital_estancado_total_costo_usd": total_cap_estancado_costo,
+                "capital_estancado_total_venta_usd": total_cap_estancado_venta
+            },
+            "categorias": lista_categorias,
+            "top_vendidos": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "unidades": p["unidades"]} for p in top_vendidos],
+            "top_rentables": [{"codigo": p["codigo_articulo"], "nombre": p["nombre"], "ganancia_usd": round(p["ganancia_usd"], 2)} for p in top_rentables],
+            "top_skus_sin_venta": top_skus_sin_venta,
+            "comportamiento_temporal": comportamiento_temporal_final,
+            "afinidad_productos": resultado_afinidad
+        },
+        "datos_rotacion": {
+            "tabla_mix": lista_productos,
+            "top_skus_rotacion": top_skus_rotacion
+        }
+    }
+
+
+# Endpoints de la API
+@app.get("/")
+def health_check():
+    return {"status": "ok", "message": "Consolidador Semanal API funcionando correctamente"}
+
+
+@app.post("/procesar-semana")
+def api_procesar_semana(payload: Union[List[Dict[str, Any]], Dict[str, Any]], key: str = None):
+    resultado = procesar_semana(payload)
+    if isinstance(resultado, dict) and "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
