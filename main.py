@@ -5,17 +5,18 @@ from pydantic import BaseModel
 from typing import Dict, Any, Optional, Union, List
 from weasyprint import HTML
 
-from scripts.bcv import obtener_tasa_y_fecha
-from scripts.ingestor import ejecutar_ingestor
-from scripts.catalogador import ejecutar_catalogador
-from scripts.enriquecedor import ejecutar_enriquecedor
-from scripts.control_inventario import ejecutar_control_inventario
-from scripts.motor_financiero import ejecutar_motor_financiero
-from scripts.motor_estado import ejecutar_motor_estado
+# Flujo Diario
+from scripts.diario.bcv import obtener_tasa_y_fecha
+from scripts.diario.ingestor import ejecutar_ingestor
+from scripts.diario.catalogador import ejecutar_catalogador
+from scripts.diario.enriquecedor import ejecutar_enriquecedor
+from scripts.diario.control_inventario import ejecutar_control_inventario
+from scripts.diario.motor_financiero import ejecutar_motor_financiero
+from scripts.diario.motor_estado import ejecutar_motor_estado
 
-# Importaciones del flujo semanal
-from scripts.consolidador import procesar_semana
-from scripts.comparador import comparar_semanas
+# Flujo Semanal
+from scripts.semanal.consolidador import procesar_semana
+from scripts.semanal.comparador import comparar_semanas
 
 app = FastAPI()
 
