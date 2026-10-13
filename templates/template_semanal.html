@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Plantilla Fino Semanal v2.0</title>
+    <title>Plantilla Fino Semanal v3.1</title>
     <style>
         /* Importación de Poppins e Inter */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@400;600;700;800;900&display=swap');
@@ -27,38 +27,48 @@
             background-color: #000000;
         }
 
+        .cover-eyebrow {
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 10mm;
+            margin-bottom: 4px;
+        }
+
         .cover-title {
-            font-size: 20px; 
-            font-weight: 600; 
+            font-size: 22px; 
+            font-weight: 700; 
             color: #ffffff;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 18mm;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
             line-height: 1.2;
         }
 
         .cover-business {
-            font-size: 14px; 
+            font-size: 15px; 
             font-weight: 700;
-            color: #94a3b8;
+            color: #f1f5f9;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
         }
 
         .cover-date {
             font-size: 12px; 
             font-weight: 500;
-            color: #64748b;
-            margin-bottom: 12px;
+            color: #94a3b8;
+            margin-bottom: 16px;
         }
 
         .cover-phase-badge {
             display: inline-block;
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: #cbd5e1;
-            padding: 4px 10px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #f8fafc;
+            padding: 5px 12px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
@@ -106,23 +116,27 @@
         }
 
         h1, h2, h3, h4, 
+        .cover-eyebrow,
         .cover-title, 
+        .cover-business,
         .business-name, 
         .kpi-value, 
         .kpi-label, 
         .summary-title, 
         .section-box-label, 
+        .ranking-title,
+        .ranking-group-title,
         .evo-title, 
         .evo-fase-label { 
             font-family: 'Poppins', sans-serif; 
         }
 
         /* Estructura de Páginas */
-        .section-summary { page-break-before: always; page-break-after: always; }
-        .section-performance { page-break-after: always; }
-        .section-intelligence { page-break-after: always; }
-        .section-initiatives { page-break-after: always; }
-        .section-roadmap { page-break-after: avoid; }
+        .section-performance { page-break-before: always; page-break-after: always; }
+        .section-inventory { page-break-before: always; page-break-after: always; }
+        .section-intelligence { page-break-before: always; page-break-after: always; }
+        .section-initiatives { page-break-before: always; page-break-after: always; }
+        .section-roadmap { page-break-before: always; page-break-after: avoid; }
         
         /* Encabezados */
         .header-premium { margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #0f172a; }
@@ -139,72 +153,226 @@
         .highlight { font-weight: 600; color: #0f172a; }
 
         /* Tarjeta de Resumen Ejecutivo */
-        .summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #1e40af; border-radius: 6px; padding: 12px; margin-bottom: 16px; page-break-inside: avoid; }
-        .summary-item { margin-bottom: 10px; }
-        .summary-item:last-child { margin-bottom: 0; }
-        .summary-item-label { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 2px; letter-spacing: 0.5px; }
+        .summary-card { 
+            background: #f8fafc; 
+            border: 1px solid #e2e8f0; 
+            border-left: 4px solid #1e40af; 
+            border-radius: 6px; 
+            padding: 12px; 
+            margin-bottom: 16px; 
+            page-break-inside: avoid; 
+        }
+
+        .summary-item-label { 
+            font-size: 12px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            color: #1e40af; 
+            display: block; 
+            margin-bottom: 4px; 
+            letter-spacing: 0.5px; 
+        }
+
         .summary-item-text { font-size: 14px; color: #334155; margin: 0; line-height: 1.4; }
 
         /* KPIs Globales Semanales */
         .kpi-row { display: block; width: 100%; margin-bottom: 12px; page-break-inside: avoid; }
-        .kpi-card { display: inline-block; width: 48%; background: #f8fafc; padding: 10px 4px 4px 4px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center; vertical-align: top; margin-bottom: 4px; position: relative; overflow: hidden; }
+        .kpi-card { display: inline-block; width: 48%; background: #f8fafc; padding: 10px 4px 6px 4px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center; vertical-align: top; margin-bottom: 6px; position: relative; overflow: hidden; }
         .kpi-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; }
         .kpi-card.kpi-fino::before { background: linear-gradient(to right, #004aad, #cb6ce6); }
         .kpi-card.kpi-bueno::before { background: #15803d; }
         .kpi-card.kpi-regular::before { background: #b45309; }
-        .kpi-card.kpi-bajo::before, .kpi-card.kpi-critico::before { background: #b91c1c; }
+        .kpi-card.kpi-bajo::before { background: #c2410c; }
+        .kpi-card.kpi-critico::before { background: #b91c1c; }
         .kpi-card:nth-child(odd) { margin-right: 2%; }
-        .kpi-value { font-size: 20px; font-weight: 600; color: #0f172a; margin: 1px 0; }
+        .kpi-value { font-size: 20px; font-weight: 600; color: #0f172a; margin: 2px 0; }
         .kpi-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
         .kpi-subtext { font-size: 11px; color: #475569; font-weight: 500; display: block; margin-top: 1px; }
-        .kpi-status { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 3px; margin-top: 0px; }
-        
+
+        /* Etiquetas de estado de KPIs sin resaltado / fondo */
+        .kpi-status { display: inline-block; font-size: 11px; font-weight: 600; padding: 0; margin-top: 2px; background: transparent !important; }
         .status-fino { color: #665cca; }
         .status-bueno { color: #15803d; }
         .status-regular { color: #b45309; }
-        .status-bajo, .status-critico { color: #b91c1c; }
+        .status-bajo { color: #c2410c; }
+        .status-critico { color: #b91c1c; }
 
-        /* Grillas de Evolución Semanal */
+        /* Grillas y Cajas */
         .grid-2col { display: block; width: 100%; margin-bottom: 12px; page-break-inside: avoid; }
         .grid-box { display: inline-block; width: 48%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; vertical-align: top; box-sizing: border-box; }
         .grid-box:nth-child(odd) { margin-right: 2%; }
         .grid-box-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 2px; }
-        .grid-box-val { font-size: 14px; font-weight: 700; color: #0f172a; display: block; }
+        .grid-box-val { font-size: 16px; font-weight: 700; color: #0f172a; display: block; }
         .grid-box-sub { font-size: 12px; color: #475569; display: block; margin-top: 2px; }
 
-        /* Categorías y Tablas */
-        .category-summary-container { 
-            background-color: #f8fafc; 
+        /* Tarjetas de Turnos */
+        .shift-card {
+            background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 6px; 
-            padding: 12px 8px; 
-            margin-bottom: 16px; 
-            display: block; 
-            width: 100%; 
-            position: relative; 
-            overflow: hidden; 
-            page-break-inside: avoid; 
+            border-left: 3px solid #1e40af;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            page-break-inside: avoid;
         }
-        .category-summary-container::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #1e40af; }
-        .category-block { display: block; margin-bottom: 6px; }
-        .category-block:last-child { margin-bottom: 0; }
-        .category-label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; display: block; }
-        .category-text { font-size: 14px; color: #1e293b; }
+        .shift-header {
+            width: 100%;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 4px;
+        }
+        .shift-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            display: inline-block;
+            width: 48%;
+        }
+        .shift-amount {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e40af;
+            display: inline-block;
+            width: 50%;
+            text-align: right;
+        }
+        .shift-percent { font-size: 12px; color: #64748b; font-weight: 500; }
+        .shift-body { display: block; width: 100%; margin: 6px 0; }
+        .shift-chip {
+            display: inline-block;
+            width: 48%;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 4px 6px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .shift-chip:first-child { margin-right: 2%; }
+        .shift-chip-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; }
+        .shift-chip-val { font-size: 14px; font-weight: 700; color: #0f172a; display: block; }
+        .shift-footer { border-top: 1px dashed #e2e8f0; padding-top: 4px; margin-top: 4px; }
+        .shift-top-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; display: inline; }
+        .shift-top-val { font-size: 14px; font-weight: 600; color: #0f172a; }
 
-        .table-container { 
-            background: #f8fafc; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 6px; 
-            padding: 6px 8px; 
-            margin-bottom: 16px; 
-            page-break-inside: auto !important; 
+        /* Guía de Rotación */
+        .rotacion-item-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 8px;
+            margin-bottom: 6px;
+            page-break-inside: avoid;
         }
+        .rotacion-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 3px;
+        }
+        .rotacion-item-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .rotacion-days-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 2px;
+        }
+        .day-box {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            text-align: center;
+            padding: 3px 0;
+        }
+        .day-lbl {
+            font-size: 10px;
+            font-weight: 700;
+            color: #64748b;
+            display: block;
+            text-transform: uppercase;
+        }
+        .day-val {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+            display: block;
+        }
+
+        /* Rankings */
+        .ranking-group-container { margin-top: 14px; display: block; width: 100%; }
+        .ranking-group-negative { page-break-before: always; margin-top: 0; padding-top: 0; }
+        .ranking-group-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            page-break-after: avoid;
+        }
+
+        .ranking-card { 
+            background: #ffffff; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            padding: 10px 10px 6px 10px; 
+            margin-bottom: 10px; 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important; 
+        }
+        
+        .ranking-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
         .prod-table { width: 100%; border-collapse: collapse; }
-        .prod-table th { text-align: left; padding: 6px 4px; font-size: 12px; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+        .prod-table th { text-align: left; padding: 6px 4px; font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+        .prod-table th.col-rank { width: 10%; text-align: center; }
+        .prod-table th.col-prod { width: 55%; text-align: left; }
+        .prod-table th.col-val  { width: 35%; text-align: right; }
         .prod-table td { padding: 8px 4px; border-bottom: 1px solid #e2e8f0; font-size: 14px; vertical-align: middle; }
         .prod-table tr:last-child td { border-bottom: none; }
 
-        /* Tarjetas de Inteligencia, Iniciativas y Bloques */
+        .rank-badge {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
+            background-color: #e2e8f0;
+            color: #475569;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 50%;
+            text-align: center;
+        }
+        .rank-badge-blue { background-color: #eff6ff; color: #1e40af; }
+        .rank-badge-green { background-color: #f0fdf4; color: #15803d; }
+        .rank-badge-amber { background-color: #fffbeb; color: #b45309; }
+        .rank-badge-red { background-color: #fef2f2; color: #b91c1c; }
+
+        .metric-val { font-size: 14px; font-weight: 700; text-align: right; display: block; }
+        .val-dark { color: #0f172a; }
+        .val-blue { color: #1e40af; }
+        .val-green { color: #15803d; }
+        .val-amber { color: #b45309; }
+        .val-red { color: #b91c1c; }
+
+        /* Tarjetas de Inteligencia e Iniciativas */
         .action-card-row { 
             background: #f8fafc; 
             border-radius: 8px; 
@@ -215,10 +383,9 @@
             page-break-inside: avoid; 
         }
         .row-red { border-left: 4px solid #b91c1c; }
-        .row-amber { border-left: 4px solid #b45309; }
         .row-green { border-left: 4px solid #15803d; }
         .row-blue { border-left: 4px solid #1e40af; }
-        .row-purple { border-left: 4px solid #7e22ce; }
+        .row-amber { border-left: 4px solid #b45309; }
         
         .card-header-flex { margin-bottom: 8px; display: block; }
         .card-main-title { font-size: 16px; font-weight: 700; color: #0f172a; display: block; margin: 6px 0 4px 0; }
@@ -227,40 +394,41 @@
         .sub-block { display: block; width: 100%; margin-bottom: 8px; }
         .sub-block:last-child { margin-bottom: 0; }
         
-        .box-consecuencia, .box-solucion, .box-porque, .box-impacto { border-radius: 6px; padding: 8px 10px; }
-        .box-consecuencia { background-color: #fffbeb; border: 1px solid rgba(180, 83, 9, 0.18); }
-        .row-red .box-consecuencia { background-color: #fef2f2; border: 1px solid rgba(185, 28, 28, 0.18); }
+        /* Cajas especiales de color */
+        .box-consecuencia, .box-solucion, .box-impacto, .box-ajuste { border-radius: 6px; padding: 8px 10px; }
+        .box-consecuencia { background-color: #fef2f2; border: 1px solid rgba(185, 28, 28, 0.25); }
         .box-solucion { background-color: #eff6ff; border: 1.5px dashed #1e40af; }
-        .box-porque { background-color: #faf5ff; border: 1px solid rgba(126, 34, 206, 0.18); }
-        .box-impacto { background-color: #f0fdf4; border: 1px solid rgba(21, 128, 61, 0.18); }
+        .box-impacto { background-color: #f0fdf4; border: 1px solid rgba(21, 128, 61, 0.25); }
+        .box-ajuste { background-color: #fffbeb; border: 1px solid rgba(180, 83, 9, 0.25); }
         
-        .section-box-label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .section-box-label { font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; display: block; letter-spacing: 0.3px; }
         .box-solucion .section-box-label { color: #1e40af; }
-        .box-consecuencia .section-box-label { color: #b45309; }
-        .row-red .box-consecuencia .section-box-label { color: #b91c1c; }
-        .box-porque .section-box-label { color: #7e22ce; }
+        .box-consecuencia .section-box-label { color: #b91c1c; }
         .box-impacto .section-box-label { color: #15803d; }
+        .box-ajuste .section-box-label { color: #b45309; }
         
-        .section-box-text { font-size: 14px; color: #334155; margin: 0; line-height: 1.4; }
+        .section-box-text { font-size: 14px; margin: 0; line-height: 1.4; }
         .box-solucion .section-box-text { color: #1e3a8a; }
-        .box-consecuencia .section-box-text { color: #7c2d12; }
-        .row-red .box-consecuencia .section-box-text { color: #7f1d1d; }
-        .box-porque .section-box-text { color: #581c87; }
+        .box-consecuencia .section-box-text { color: #7f1d1d; }
         .box-impacto .section-box-text { color: #14532d; }
+        .box-ajuste .section-box-text { color: #78350f; }
         
         .badge-status { font-weight: 700; border-radius: 4px; font-size: 10px; display: inline-block; padding: 2px 6px; text-transform: uppercase; }
         .badge-green { background-color: #f0fdf4; color: #15803d; border: 1px solid rgba(21, 128, 61, 0.25); }
         .badge-blue { background-color: #eff6ff; color: #1e40af; border: 1px solid rgba(30, 64, 175, 0.25); }
         .badge-amber { background-color: #fffbeb; color: #b45309; border: 1px solid rgba(180, 83, 9, 0.25); }
         .badge-red { background-color: #fef2f2; color: #b91c1c; border: 1px solid rgba(185, 28, 28, 0.25); }
-        .badge-gray { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-        /* Roadmap */
+        /* Roadmap y Crecimiento */
+        .evolution-wrapper { margin-top: 4px; }
         .evo-card-linear { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; width: 100%; display: block; page-break-inside: avoid; }
+        .evo-left-content { display: block; width: 100%; margin-bottom: 8px; }
+        .evo-right-meta { display: block; width: 100%; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+        
         .evo-fase-label { font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
         .evo-title { font-size: 16px; font-weight: 700; color: #0f172a; margin: 2px 0 4px 0; }
         .evo-desc { font-size: 14px; color: #475569; margin: 0; line-height: 1.4; }
-        .evo-bar-container { width: 100%; background-color: #cbd5e1; height: 5px; border-radius: 10px; overflow: hidden; margin-top: 6px; margin-bottom: 4px; }
+        .evo-bar-container { width: 100%; background-color: #cbd5e1; height: 5px; border-radius: 10px; overflow: hidden; margin-bottom: 4px; }
         .evo-bar-fill { height: 100%; border-radius: 10px; }
         .bg-success { background-color: #15803d; }
         .bg-process { background-color: #1e40af; }
@@ -268,10 +436,22 @@
         .evo-status-text { font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; }
         .evo-stability-text { font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase; display: block; margin-top: 2px; }
 
-        /* Listas simples */
-        .custom-list { margin: 0; padding-left: 16px; }
-        .custom-list li { font-size: 14px; color: #334155; margin-bottom: 4px; line-height: 1.4; }
-        .custom-list li:last-child { margin-bottom: 0; }
+        /* Metas de Fase */
+        .evo-metas-box { 
+            margin-top: 8px; 
+            padding-top: 6px; 
+            border-top: 1px dashed #cbd5e1; 
+        }
+        .evo-meta-item { 
+            font-size: 11px; 
+            color: #475569; 
+            margin-bottom: 2px; 
+            line-height: 1.3;
+            display: block;
+        }
+        .evo-meta-label { font-weight: 600; color: #334155; }
+        .evo-meta-val { font-weight: 700; color: #0f172a; }
+        .evo-meta-ok { color: #15803d; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -293,365 +473,553 @@
             </g>
         </svg>
 
-        <div class="cover-title">Informe Ejecutivo Semanal</div>
-        <div class="cover-business">[Nombre del Negocio]</div>
-        <div class="cover-date">[DD/MM/AAAA] al [DD/MM/AAAA]</div>
-        <div class="cover-phase-badge">Fase [Número] - [Nombre de la Fase] ([Porcentaje]%)</div>
+        <div class="cover-eyebrow">Inteligencia de Negocios</div>
+        <div class="cover-title">Reporte Semanal</div>
+        
+        <div class="cover-business">[nombre_negocio]</div>
+        <div class="cover-date">[fecha_semana_inicial] - [fecha_semana_final]</div>
+        <div class="cover-phase-badge">Fase [fase_numero] - [fase_nombre]</div>
     </div>
 
-    <!-- PÁGINA 1: RESUMEN DE LA SEMANA Y KPIS GENERALES -->
-    <div class="section-summary">
+    <!-- SECCIÓN 1: DESEMPEÑO COMERCIAL -->
+    <div class="section-performance">
         <div class="header-premium">
             <div class="header-top-row">
                 <div class="header-cell-left">
-                    <div class="business-name">[Nombre del Negocio]</div>
+                    <div class="business-name">[nombre_negocio]</div>
                 </div>
                 <div class="header-cell-right">
-                    <div class="header-date">[DD/MM/AAAA] al [DD/MM/AAAA]</div>
+                    <div class="header-date">[fecha_semana]</div>
                 </div>
             </div>
-            <h1>Resumen Semanal</h1>
+            <h1>REPORTE SEMANAL</h1>
         </div>
 
         <div class="summary-card">
-            <div class="summary-item">
-                <span class="summary-item-label">¿Cómo estuvo el negocio esta semana?</span>
-                <p class="summary-item-text">[Resumen ejecutivo del comportamiento general]</p>
-            </div>
-            <div class="summary-item">
-                <span class="summary-item-label">Principal Problema</span>
-                <p class="summary-item-text">[El obstáculo o desviación más importante]</p>
-            </div>
-            <div class="summary-item">
-                <span class="summary-item-label">Principal Avance</span>
-                <p class="summary-item-text">[El logro o crecimiento más destacado]</p>
-            </div>
-            <div class="summary-item">
-                <span class="summary-item-label">Principal Aprendizaje</span>
-                <p class="summary-item-text">[El conocimiento más importante obtenido esta semana]</p>
-            </div>
+            <span class="summary-item-label">Resumen</span>
+            <p class="summary-item-text">[resumen_ejecutivo_semanal]</p>
         </div>
 
-        <h3>📊 Resultados Generales</h3>
+        <h2>📊 RESULTADOS GENERALES</h2>
         <div class="kpi-row">
             <div class="kpi-card [clase_linea_venta]">
                 <div class="kpi-label">Ventas Totales</div>
-                <div class="kpi-value">$[Monto]</div>
-                <span class="kpi-subtext">Var: [+/- % o USD]</span>
+                <div class="kpi-value">[ventas_totales_monto]</div>
+                <span class="kpi-subtext">[ventas_totales_var]</span>
                 <div class="kpi-status [clase_status_venta]"><span class="kpi-circle"></span>[etiqueta_venta]</div>
             </div>
             <div class="kpi-card [clase_linea_ganancia]">
                 <div class="kpi-label">Ganancia Real</div>
-                <div class="kpi-value">$[Monto]</div>
-                <span class="kpi-subtext">Var: [+/- % o USD]</span>
+                <div class="kpi-value">[ganancia_real_monto]</div>
+                <span class="kpi-subtext">[ganancia_real_var]</span>
                 <div class="kpi-status [clase_status_ganancia]"><span class="kpi-circle"></span>[etiqueta_ganancia]</div>
             </div>
             <div class="kpi-card [clase_linea_margen]">
                 <div class="kpi-label">Margen Promedio</div>
-                <div class="kpi-value">[Valor]%</div>
-                <span class="kpi-subtext">Var: [+/- pp]</span>
+                <div class="kpi-value">[margen_promedio_valor]</div>
+                <span class="kpi-subtext">[margen_promedio_var]</span>
                 <div class="kpi-status [clase_status_margen]"><span class="kpi-circle"></span>[etiqueta_margen]</div>
             </div>
             <div class="kpi-card [clase_linea_clientes]">
                 <div class="kpi-label">Clientes Totales</div>
-                <div class="kpi-value">[Cantidad]</div>
-                <span class="kpi-subtext">Var: [+/- %]</span>
+                <div class="kpi-value">[total_clientes]</div>
+                <span class="kpi-subtext">[total_clientes_var]</span>
                 <div class="kpi-status [clase_status_clientes]"><span class="kpi-circle"></span>[etiqueta_clientes]</div>
             </div>
             <div class="kpi-card [clase_linea_ticket]">
                 <div class="kpi-label">Ticket Promedio</div>
-                <div class="kpi-value">$[Monto]</div>
-                <span class="kpi-subtext">Var: [+/- %]</span>
+                <div class="kpi-value">[ticket_promedio_monto]</div>
+                <span class="kpi-subtext">[ticket_promedio_var]</span>
                 <div class="kpi-status [clase_status_ticket]"><span class="kpi-circle"></span>[etiqueta_ticket]</div>
             </div>
             <div class="kpi-card [clase_linea_articulos]">
-                <div class="kpi-label">Artículos x Cliente</div>
-                <div class="kpi-value">[Cantidad]</div>
-                <span class="kpi-subtext">Var: [+/- %]</span>
+                <div class="kpi-label">Artículos por Cliente</div>
+                <div class="kpi-value">[articulos_por_cliente]</div>
+                <span class="kpi-subtext">[articulos_por_cliente_var]</span>
                 <div class="kpi-status [clase_status_articulos]"><span class="kpi-circle"></span>[etiqueta_articulos]</div>
             </div>
-            <div class="kpi-card [clase_linea_inventario]">
-                <div class="kpi-label">Salud Inventario</div>
-                <div class="kpi-value">[Valor]%</div>
-                <span class="kpi-subtext">Var: [+/- pp]</span>
-                <div class="kpi-status [clase_status_inventario]"><span class="kpi-circle"></span>[etiqueta_inventario]</div>
-            </div>
-            <div class="kpi-card [clase_linea_mermas]">
-                <div class="kpi-label">Mermas Totales</div>
-                <div class="kpi-value">$[Monto]</div>
-                <span class="kpi-subtext">[Cantidad] unds | Var: [+/- %]</span>
-                <div class="kpi-status [clase_status_mermas]"><span class="kpi-circle"></span>[etiqueta_mermas]</div>
-            </div>
         </div>
-    </div>
 
-    <!-- PÁGINA 2: DESEMPEÑO DEL NEGOCIO -->
-    <div class="section-performance">
-        <h2>📅 Tendencias de Ventas</h2>
+        <h4>Ventas por Día</h4>
         
         <div class="grid-2col">
             <div class="grid-box">
                 <span class="grid-box-label">🟢 Mejor Día</span>
-                <span class="grid-box-val">[Día]</span>
-                <span class="grid-box-sub">$[Monto] USD ([Porcentaje]% del total)</span>
+                <span class="grid-box-val">[mejor_dia_nombre]</span>
+                <span class="grid-box-sub">[mejor_dia_monto] ([mejor_dia_porcentaje]%)</span>
             </div>
             <div class="grid-box">
                 <span class="grid-box-label">🔴 Peor Día</span>
-                <span class="grid-box-val">[Día]</span>
-                <span class="grid-box-sub">$[Monto] USD ([Porcentaje]% del total)</span>
+                <span class="grid-box-val">[peor_dia_nombre]</span>
+                <span class="grid-box-sub">[peor_dia_monto] ([peor_dia_porcentaje]%)</span>
             </div>
         </div>
 
-        <h4>Desempeño por Turnos</h4>
-        <div class="action-card-row row-blue" style="padding: 8px 12px; margin-bottom: 12px;">
-            <div class="sub-block">
-                <span class="section-box-label">☀️ Turno Mañana</span>
-                <p class="section-box-text">$[Monto] USD ([Porcentaje]% del total) | [Facturas] facturas | Ticket Prom: $[Monto] USD | Top: [Producto]</p>
+        <h4>Ventas por Turno</h4>
+        
+        <div class="shift-card">
+            <div class="shift-header">
+                <span class="shift-title">&#9728; Mañana</span>
+                <span class="shift-amount">[turno_manana_monto] <span class="shift-percent">([turno_manana_porcentaje]%)</span></span>
             </div>
-            <div class="sub-block" style="border-top: 1px solid #e2e8f0; padding-top: 6px; margin-top: 6px;">
-                <span class="section-box-label">⛅ Turno Tarde</span>
-                <p class="section-box-text">$[Monto] USD ([Porcentaje]% del total) | [Facturas] facturas | Ticket Prom: $[Monto] USD | Top: [Producto]</p>
+            <div class="shift-body">
+                <div class="shift-chip">
+                    <span class="shift-chip-label">Facturas</span>
+                    <span class="shift-chip-val">[turno_manana_facturas]</span>
+                </div>
+                <div class="shift-chip">
+                    <span class="shift-chip-label">Ticket Promedio</span>
+                    <span class="shift-chip-val">[turno_manana_ticket_prom]</span>
+                </div>
             </div>
-            <div class="sub-block" style="border-top: 1px solid #e2e8f0; padding-top: 6px; margin-top: 6px;">
-                <span class="section-box-label">🌙 Turno Noche</span>
-                <p class="section-box-text">$[Monto] USD ([Porcentaje]% del total) | [Facturas] facturas | Ticket Prom: $[Monto] USD | Top: [Producto]</p>
-            </div>
-        </div>
-
-        <h3>📦 Tendencias de Categorías</h3>
-        <div class="category-summary-container">
-            <div class="category-block">
-                <span class="category-label">Categorías en Crecimiento:</span>
-                <span class="category-text">[Categorías relevantes y su impacto]</span>
-            </div>
-            <div class="category-block" style="border-top: 1px solid #e2e8f0; padding-top: 6px;">
-                <span class="category-label" style="color: #b91c1c;">Categorías en Deterioro:</span>
-                <span class="category-text">[Categorías relevantes y su impacto]</span>
+            <div class="shift-footer">
+                <span class="shift-top-label">Top Producto: </span>
+                <span class="shift-top-val">[turno_manana_top_producto]</span>
             </div>
         </div>
 
-        <h4>Productos Destacados</h4>
-        <div class="table-container">
-            <span class="section-box-label" style="margin-bottom: 4px;">Más Vendidos</span>
-            <table class="prod-table" style="margin-bottom: 8px;">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th style="text-align: right;">Unidades</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- [LOOP_MAS_VENDIDOS_INICIO] -->
-                    <tr>
-                        <td class="highlight">[Producto]</td>
-                        <td style="text-align: right; font-weight: 600;">[Unidades]</td>
-                    </tr>
-                    <!-- [LOOP_MAS_VENDIDOS_FIN] -->
-                </tbody>
-            </table>
-
-            <span class="section-box-label" style="margin-bottom: 4px;">Mayor Ingreso</span>
-            <table class="prod-table" style="margin-bottom: 8px;">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th style="text-align: right;">Ingreso ($)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- [LOOP_MAYOR_INGRESO_INICIO] -->
-                    <tr>
-                        <td class="highlight">[Producto]</td>
-                        <td style="text-align: right; font-weight: 600; color: #1e40af;">$[Monto]</td>
-                    </tr>
-                    <!-- [LOOP_MAYOR_INGRESO_FIN] -->
-                </tbody>
-            </table>
-
-            <span class="section-box-label" style="margin-bottom: 4px;">Mayor Ganancia</span>
-            <table class="prod-table">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th style="text-align: right;">Ganancia ($)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- [LOOP_MAYOR_GANANCIA_INICIO] -->
-                    <tr>
-                        <td class="highlight">[Producto]</td>
-                        <td style="text-align: right; font-weight: 600; color: #15803d;">$[Monto]</td>
-                    </tr>
-                    <!-- [LOOP_MAYOR_GANANCIA_FIN] -->
-                </tbody>
-            </table>
+        <div class="shift-card">
+            <div class="shift-header">
+                <span class="shift-title">&#9682; Tarde</span>
+                <span class="shift-amount">[turno_tarde_monto] <span class="shift-percent">([turno_tarde_porcentaje]%)</span></span>
+            </div>
+            <div class="shift-body">
+                <div class="shift-chip">
+                    <span class="shift-chip-label">Facturas</span>
+                    <span class="shift-chip-val">[turno_tarde_facturas]</span>
+                </div>
+                <div class="shift-chip">
+                    <span class="shift-chip-label">Ticket Promedio</span>
+                    <span class="shift-chip-val">[turno_tarde_ticket_prom]</span>
+                </div>
+            </div>
+            <div class="shift-footer">
+                <span class="shift-top-label">Top Producto: </span>
+                <span class="shift-top-val">[turno_tarde_top_producto]</span>
+            </div>
         </div>
 
-        <h4>Productos de Baja Rotación</h4>
-        <div class="table-container">
-            <span class="section-box-label" style="margin-bottom: 4px;">Menos Vendidos</span>
-            <table class="prod-table" style="margin-bottom: 8px;">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th style="text-align: right;">Unidades</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- [LOOP_MENOS_VENDIDOS_INICIO] -->
-                    <tr>
-                        <td class="highlight">[Producto]</td>
-                        <td style="text-align: right;">[Unidades]</td>
-                    </tr>
-                    <!-- [LOOP_MENOS_VENDIDOS_FIN] -->
-                </tbody>
-            </table>
-
-            <span class="section-box-label" style="margin-bottom: 4px; color: #b91c1c;">Sin Ventas</span>
-            <table class="prod-table">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th style="text-align: right;">Stock</th>
-                        <th style="text-align: right;">Capital Estancado ($)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- [LOOP_SIN_VENTAS_INICIO] -->
-                    <tr>
-                        <td class="highlight">[Producto]</td>
-                        <td style="text-align: right;">[Stock]</td>
-                        <td style="text-align: right; font-weight: 600; color: #b91c1c;">$[Monto]</td>
-                    </tr>
-                    <!-- [LOOP_SIN_VENTAS_FIN] -->
-                </tbody>
-            </table>
+        <div class="shift-card">
+            <div class="shift-header">
+                <span class="shift-title">&#9790; Noche</span>
+                <span class="shift-amount">[turno_noche_monto] <span class="shift-percent">([turno_noche_porcentaje]%)</span></span>
+            </div>
+            <div class="shift-body">
+                <div class="shift-chip">
+                    <span class="shift-chip-label">Facturas</span>
+                    <span class="shift-chip-val">[turno_noche_facturas]</span>
+                </div>
+                <div class="shift-chip">
+                    <span class="shift-chip-label">Ticket Promedio</span>
+                    <span class="shift-chip-val">[turno_noche_ticket_prom]</span>
+                </div>
+            </div>
+            <div class="shift-footer">
+                <span class="shift-top-label">Top Producto: </span>
+                <span class="shift-top-val">[turno_noche_top_producto]</span>
+            </div>
         </div>
     </div>
 
-    <!-- PÁGINA 3: INTELIGENCIA DEL NEGOCIO -->
+    <!-- SECCIÓN 2: INVENTARIO Y PRODUCTOS -->
+    <div class="section-inventory">
+        <h2>📦 INVENTARIO Y PRODUCTOS</h2>
+
+        <h3>Guía de Rotación</h3>
+
+        <!-- [SI_TIENE_PRODUCCION_INICIO] -->
+        <h4>Producción</h4>
+        
+        <!-- [LOOP_GUIA_PRODUCCION_INICIO] -->
+        <div class="rotacion-item-card">
+            <div class="rotacion-item-header">
+                <span class="rotacion-item-name">[producto_elaborado_nombre]</span>
+                <span class="badge-status badge-blue"><span style="font-weight: 500; font-size: 10px; opacity: 0.85;">Confianza:</span> [nivel_confianza]</span>
+            </div>
+            <div class="rotacion-days-grid">
+                <div class="day-box"><span class="day-lbl">L</span><span class="day-val">[cant_lun]</span></div>
+                <div class="day-box"><span class="day-lbl">M</span><span class="day-val">[cant_mar]</span></div>
+                <div class="day-box"><span class="day-lbl">Mi</span><span class="day-val">[cant_mie]</span></div>
+                <div class="day-box"><span class="day-lbl">J</span><span class="day-val">[cant_jue]</span></div>
+                <div class="day-box"><span class="day-lbl">V</span><span class="day-val">[cant_vie]</span></div>
+                <div class="day-box"><span class="day-lbl">S</span><span class="day-val">[cant_sab]</span></div>
+                <div class="day-box"><span class="day-lbl">D</span><span class="day-val">[cant_dom]</span></div>
+            </div>
+        </div>
+        <!-- [LOOP_GUIA_PRODUCCION_FIN] -->
+        <!-- [SI_TIENE_PRODUCCION_FIN] -->
+
+        <!-- [SI_TIENE_REPOSICION_INICIO] -->
+        <h4>Reposición</h4>
+        
+        <!-- [LOOP_GUIA_REPOSICION_INICIO] -->
+        <div class="rotacion-item-card">
+            <div class="rotacion-item-header">
+                <span class="rotacion-item-name">[producto_sku_nombre]</span>
+                <span class="badge-status badge-blue"><span style="font-weight: 500; font-size: 10px; opacity: 0.85;">Confianza:</span> [nivel_confianza]</span>
+            </div>
+            <div class="rotacion-days-grid">
+                <div class="day-box"><span class="day-lbl">L</span><span class="day-val">[cant_lun]</span></div>
+                <div class="day-box"><span class="day-lbl">M</span><span class="day-val">[cant_mar]</span></div>
+                <div class="day-box"><span class="day-lbl">Mi</span><span class="day-val">[cant_mie]</span></div>
+                <div class="day-box"><span class="day-lbl">J</span><span class="day-val">[cant_jue]</span></div>
+                <div class="day-box"><span class="day-lbl">V</span><span class="day-val">[cant_vie]</span></div>
+                <div class="day-box"><span class="day-lbl">S</span><span class="day-val">[cant_sab]</span></div>
+                <div class="day-box"><span class="day-lbl">D</span><span class="day-val">[cant_dom]</span></div>
+            </div>
+        </div>
+        <!-- [LOOP_GUIA_REPOSICION_FIN] -->
+        <!-- [SI_TIENE_REPOSICION_FIN] -->
+
+        <div class="summary-card" style="margin-top: 10px; margin-bottom: 16px;">
+            <p class="summary-item-text">[comentario_guia_rotacion]</p>
+        </div>
+
+        <div class="ranking-group-container" style="margin-top: 0;">
+            <div class="ranking-group-title">Rankings</div>
+            
+            <div class="ranking-card">
+                <span class="ranking-title">Más Vendidos</span>
+                <table class="prod-table">
+                    <thead>
+                        <tr>
+                            <th class="col-rank">#</th>
+                            <th class="col-prod">Producto</th>
+                            <th class="col-val">Unidades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- [LOOP_MAS_VENDIDOS_INICIO] -->
+                        <tr>
+                            <td style="text-align: center;"><span class="rank-badge">[producto_puesto]</span></td>
+                            <td class="highlight">[producto_nombre]</td>
+                            <td><span class="metric-val val-dark">[producto_unidades]</span></td>
+                        </tr>
+                        <!-- [LOOP_MAS_VENDIDOS_FIN] -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="ranking-card">
+                <span class="ranking-title">Mayor Ganancia</span>
+                <table class="prod-table">
+                    <thead>
+                        <tr>
+                            <th class="col-rank">#</th>
+                            <th class="col-prod">Producto</th>
+                            <th class="col-val">Ganancia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- [LOOP_MAYOR_GANANCIA_INICIO] -->
+                        <tr>
+                            <td style="text-align: center;"><span class="rank-badge rank-badge-green">[producto_puesto]</span></td>
+                            <td class="highlight">[producto_nombre]</td>
+                            <td><span class="metric-val val-green">[producto_monto]</span></td>
+                        </tr>
+                        <!-- [LOOP_MAYOR_GANANCIA_FIN] -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="ranking-card">
+                <span class="ranking-title">Sin Ventas</span>
+                <table class="prod-table">
+                    <thead>
+                        <tr>
+                            <th class="col-rank">#</th>
+                            <th class="col-prod">Producto</th>
+                            <th class="col-val">Capital Estancado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- [LOOP_SIN_VENTAS_INICIO] -->
+                        <tr>
+                            <td style="text-align: center;"><span class="rank-badge rank-badge-red">[producto_puesto]</span></td>
+                            <td class="highlight">[producto_nombre]</td>
+                            <td><span class="metric-val val-red">[producto_capital_estancado]</span></td>
+                        </tr>
+                        <!-- [LOOP_SIN_VENTAS_FIN] -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 3: INTELIGENCIA DEL NEGOCIO -->
     <div class="section-intelligence">
-        <h2>🧠 Inteligencia del Negocio</h2>
+        <h2>🔍 HALLAZGOS CLAVE</h2>
 
-        <div class="action-card-row row-blue">
-            <div class="card-header-flex">
-                <span class="badge-status badge-blue">Patrones e Indicios</span>
-                <div class="card-main-title">[Indicio / Patrón Recurrente / Patrón Consolidado]</div>
-                <p class="card-description">[Descripción sencilla del comportamiento observado]</p>
-            </div>
+        <!-- [SI_SIN_HALLAZGOS_INICIO] -->
+        <div class="summary-card">
+            <p class="summary-item-text">No se confirmaron patrones ni anomalías durante esta semana.</p>
         </div>
+        <!-- [SI_SIN_HALLAZGOS_FIN] -->
 
-        <div class="action-card-row row-purple">
-            <div class="card-header-flex">
-                <span class="badge-status" style="background-color: #faf5ff; color: #7e22ce; border: 1px solid rgba(126, 34, 206, 0.25);">Relaciones Relevantes</span>
-                <div class="card-main-title">Relación de Datos</div>
-                <p class="card-description">[Cruce de variables observado, sin asumir causalidad no demostrada]</p>
-                <div class="sub-block" style="margin-top: 8px;">
-                    <div class="box-consecuencia" style="background-color: #fcf5ff; border-color: rgba(126, 34, 206, 0.2);">
-                        <span class="section-box-label" style="color: #7e22ce;">Anomalías Detectadas</span>
-                        <p class="section-box-text" style="color: #581c87;">[Día, horario, producto, categoría o comportamiento excepcional]</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        <!-- [LOOP_HALLAZGOS_POSITIVOS_INICIO] -->
         <div class="action-card-row row-green">
             <div class="card-header-flex">
-                <span class="badge-status badge-green">Oportunidades & Contexto Comercial</span>
-                <div class="card-main-title">Oportunidades Comerciales</div>
-                <p class="card-description">[Oportunidades comerciales derivadas de los datos y comportamientos observados]</p>
-                <div class="sub-block" style="margin-top: 8px;">
-                    <div class="box-impacto">
-                        <span class="section-box-label">Contexto Comercial</span>
-                        <p class="section-box-text">[Efecto relevante de días de pago, feriados, temporadas o fechas comerciales]</p>
-                    </div>
+                <span class="badge-status badge-green">[hallazgo_positivo_tipo]</span>
+                <div class="card-main-title">[hallazgo_positivo_titulo]</div>
+            </div>
+            <div class="sub-block">
+                <p class="card-description">[hallazgo_positivo_comportamiento]</p>
+            </div>
+            <div class="sub-block">
+                <div class="box-impacto">
+                    <span class="section-box-label">▲ Impacto Estimado</span>
+                    <p class="section-box-text">[hallazgo_positivo_impacto]</p>
                 </div>
             </div>
         </div>
+        <!-- [LOOP_HALLAZGOS_POSITIVOS_FIN] -->
+
+        <!-- [LOOP_HALLAZGOS_NEGATIVOS_INICIO] -->
+        <div class="action-card-row row-red">
+            <div class="card-header-flex">
+                <span class="badge-status badge-red">[hallazgo_negativo_tipo]</span>
+                <div class="card-main-title">[hallazgo_negativo_titulo]</div>
+            </div>
+            <div class="sub-block">
+                <p class="card-description">[hallazgo_negativo_comportamiento]</p>
+            </div>
+            <div class="sub-block">
+                <div class="box-consecuencia">
+                    <span class="section-box-label">▼ Impacto Estimado</span>
+                    <p class="section-box-text">[hallazgo_negativo_impacto]</p>
+                </div>
+            </div>
+        </div>
+        <!-- [LOOP_HALLAZGOS_NEGATIVOS_FIN] -->
     </div>
 
-    <!-- PÁGINA 4: REVISIÓN DE INICIATIVAS -->
+    <!-- SECCIÓN 4: REVISIÓN DE INICIATIVAS -->
     <div class="section-initiatives">
-        <h2>🎯 Revisión de Iniciativas</h2>
+        <h2>📋 REVISIÓN DE INICIATIVAS</h2>
+
+        <!-- [SI_SIN_INICIATIVAS_INICIO] -->
+        <div class="summary-card">
+            <p class="summary-item-text">No hubo iniciativas activas esta semana.</p>
+        </div>
+        <!-- [SI_SIN_INICIATIVAS_FIN] -->
 
         <!-- [LOOP_INICIATIVAS_INICIO] -->
-        <div class="action-card-row [clase_borde_iniciativa]">
+        
+        <!-- 1. TARJETA: MANTENER (VERDE) -->
+        <!-- [SI_INICIATIVA_MANTENER_INICIO] -->
+        <div class="action-card-row row-green">
             <div class="card-header-flex">
-                <span class="badge-status [clase_badge_decision]">[MANTENER / MODIFICAR / TERMINAR / EXTENDER / CONTINUAR OBSERVANDO]</span>
-                <div class="card-main-title">[Nombre de la Iniciativa]</div>
-                <p class="card-description"><strong>Origen y Objetivo:</strong> [Situación que la originó y qué se buscaba]</p>
+                <div class="card-main-title">[iniciativa_titulo]</div>
             </div>
-            <div class="card-blocks-container">
-                <div class="sub-block">
-                    <div class="box-solucion">
-                        <span class="section-box-label">📈 Resultado Observado</span>
-                        <p class="section-box-text">[KPIs afectados y cambio obtenido]</p>
-                    </div>
-                </div>
-                <div class="sub-block">
-                    <div class="box-impacto">
-                        <span class="section-box-label">🎯 Efectividad</span>
-                        <p class="section-box-text">[Evaluación basada en los resultados]</p>
-                    </div>
-                </div>
-                <div class="sub-block">
-                    <div class="box-porque">
-                        <span class="section-box-label">💡 Aprendizaje</span>
-                        <p class="section-box-text">[Qué se aprendió de la experiencia]</p>
-                    </div>
+            
+            <div class="sub-block">
+                <p class="card-description">[iniciativa_resultado_descripcion]</p>
+            </div>
+
+            <div class="sub-block">
+                <div class="box-impacto">
+                    <span class="section-box-label">➤ MANTENER</span>
+                    <p class="section-box-text">[iniciativa_justificacion]</p>
                 </div>
             </div>
         </div>
+        <!-- [SI_INICIATIVA_MANTENER_FIN] -->
+
+        <!-- 2. TARJETA: AJUSTAR (AMARILLO) -->
+        <!-- [SI_INICIATIVA_AJUSTAR_INICIO] -->
+        <div class="action-card-row row-amber">
+            <div class="card-header-flex">
+                <div class="card-main-title">[iniciativa_titulo]</div>
+            </div>
+            
+            <div class="sub-block">
+                <p class="card-description">[iniciativa_resultado_descripcion]</p>
+            </div>
+
+            <div class="sub-block">
+                <div class="box-ajuste">
+                    <span class="section-box-label">➤ AJUSTAR</span>
+                    <p class="section-box-text">[iniciativa_justificacion]</p>
+                </div>
+            </div>
+
+            <div class="sub-block" style="margin-top: 6px;">
+                <div class="box-solucion">
+                    <span class="section-box-label">Próximo Paso</span>
+                    <p class="section-box-text">[iniciativa_proximo_paso]</p>
+                </div>
+            </div>
+        </div>
+        <!-- [SI_INICIATIVA_AJUSTAR_FIN] -->
+
+        <!-- 3. TARJETA: CERRAR (ROJO) -->
+        <!-- [SI_INICIATIVA_CERRAR_INICIO] -->
+        <div class="action-card-row row-red">
+            <div class="card-header-flex">
+                <div class="card-main-title">[iniciativa_titulo]</div>
+            </div>
+            
+            <div class="sub-block">
+                <p class="card-description">[iniciativa_resultado_descripcion]</p>
+            </div>
+
+            <div class="sub-block">
+                <div class="box-consecuencia">
+                    <span class="section-box-label">➤ CERRAR</span>
+                    <p class="section-box-text">[iniciativa_justificacion]</p>
+                </div>
+            </div>
+        </div>
+        <!-- [SI_INICIATIVA_CERRAR_FIN] -->
+
         <!-- [LOOP_INICIATIVAS_FIN] -->
     </div>
 
-    <!-- PÁGINA 5: ROADMAP Y PRÓXIMA SEMANA -->
+    <!-- SECCIÓN 5: PLAN DE CRECIMIENTO -->
     <div class="section-roadmap">
-        <h2>🚀 Roadmap y Próxima Semana</h2>
+        <h2>🎯 PLAN DE CRECIMIENTO</h2>
 
-        <!-- ESTADO DEL ROADMAP -->
-        <div class="evo-card-linear">
-            <div class="evo-fase-label">Estado del Roadmap</div>
-            <div class="evo-title">Fase [Número] - [Nombre]</div>
-            <p class="evo-desc"><strong>Avance:</strong> [Porcentaje]% | <strong>Estabilidad:</strong> [Semanas logradas] de [Semanas requeridas] semanas ([En Progreso / Alcanzada])</p>
-            
-            <div class="evo-bar-container">
-                <div class="evo-bar-fill bg-process" style="width: [Porcentaje]%;"></div>
+        <div class="evolution-wrapper">
+            <!-- [SI_FASE_0_ACTIVA_INICIO] -->
+            <!-- FASE 0 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 00</div>
+                    <div class="evo-title">Observación</div>
+                    <p class="evo-desc">Recolección de datos iniciales y estabilización de la información del negocio.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_0_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_X_nombre]:</span> 
+                            <span class="evo-meta-val">[meta_X_valores]</span> 
+                            <span class="evo-meta-ok">[meta_X_check]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_0_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_0_clase_barra]" style="width: [fase_0_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_0_color_texto];">[fase_0_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_0_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_0_ACTIVA] -->
+                </div>
+            </div>
+            <!-- [SI_FASE_0_ACTIVA_FIN] -->
+
+            <!-- FASE 1 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 01</div>
+                    <div class="evo-title">Perder Menos</div>
+                    <p class="evo-desc">Elimina las fugas de dinero, mermas y desorden operativo en tu negocio.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_1_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_X_nombre]:</span> 
+                            <span class="evo-meta-val">[meta_X_valores]</span> 
+                            <span class="evo-meta-ok">[meta_X_check]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_1_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_1_clase_barra]" style="width: [fase_1_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_1_color_texto];">[fase_1_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_1_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_1_ACTIVA] -->
+                </div>
             </div>
 
-            <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #cbd5e1;">
-                <span class="section-box-label" style="color: #15803d; margin-bottom: 2px;">Objetivos Cumplidos esta Semana:</span>
-                <p class="evo-desc" style="color: #14532d; margin-bottom: 6px;">[Objetivos completados]</p>
-                
-                <span class="section-box-label" style="color: #b91c1c; margin-bottom: 2px;">Pendientes y Riesgos:</span>
-                <p class="evo-desc" style="color: #7f1d1d;">[Obstáculos o métricas que podrían amenazar el avance]</p>
+            <!-- FASE 2 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 02</div>
+                    <div class="evo-title">Vender Más</div>
+                    <p class="evo-desc">Determina combos y promociones efectivas para que cada cliente compre más productos.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_2_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_X_nombre]:</span> 
+                            <span class="evo-meta-val">[meta_X_valores]</span> 
+                            <span class="evo-meta-ok">[meta_X_check]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_2_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_2_clase_barra]" style="width: [fase_2_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_2_color_texto];">[fase_2_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_2_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_2_ACTIVA] -->
+                </div>
             </div>
-        </div>
 
-        <h3>🎯 Enfoque de la Próxima Semana</h3>
-        
-        <div class="action-card-row row-blue">
-            <span class="section-box-label" style="color: #1e40af;">Prioridades Macro</span>
-            <ul class="custom-list">
-                <!-- [LOOP_PRIORIDADES_INICIO] -->
-                <li>[Prioridad]</li>
-                <!-- [LOOP_PRIORIDADES_FIN] -->
-            </ul>
-        </div>
+            <!-- FASE 3 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 03</div>
+                    <div class="evo-title">Más Clientes</div>
+                    <p class="evo-desc">Desarrolla estrategias para atraer nuevos compradores y fidelizar a los actuales.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_3_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_X_nombre]:</span> 
+                            <span class="evo-meta-val">[meta_X_valores]</span> 
+                            <span class="evo-meta-ok">[meta_X_check]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_3_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_3_clase_barra]" style="width: [fase_3_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_3_color_texto];">[fase_3_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_3_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_3_ACTIVA] -->
+                </div>
+            </div>
 
-        <div class="action-card-row row-amber">
-            <span class="section-box-label" style="color: #b45309;">Dirección Estratégica</span>
-            <div class="sub-block">
-                <p class="section-box-text"><strong>Nuevas Estrategias:</strong> [Nombre y objetivo macro]</p>
-            </div>
-            <div class="sub-block" style="margin-top: 4px;">
-                <p class="section-box-text"><strong>Estrategias Modificadas:</strong> [Cambios realizados]</p>
-            </div>
-            <div class="sub-block" style="margin-top: 4px;">
-                <p class="section-box-text"><strong>Estrategias Cerradas:</strong> [Estrategias finalizadas y motivo]</p>
-            </div>
-            <div class="sub-block" style="margin-top: 4px;">
-                <p class="section-box-text"><strong>Estrategias en Continuidad:</strong> [Estrategias que seguirán vigentes]</p>
+            <!-- FASE 4 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 04</div>
+                    <div class="evo-title">Más Ganancias</div>
+                    <p class="evo-desc">Maximiza tus márgenes y rentabilidad total para aumentar tus ganancias totales.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_4_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_X_nombre]:</span> 
+                            <span class="evo-meta-val">[meta_X_valores]</span> 
+                            <span class="evo-meta-ok">[meta_X_check]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_4_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_4_clase_barra]" style="width: [fase_4_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_4_color_texto];">[fase_4_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_4_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_4_ACTIVA] -->
+                </div>
             </div>
         </div>
     </div>
