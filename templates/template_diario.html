@@ -164,17 +164,18 @@
         .kpi-card.kpi-fino::before { background: linear-gradient(to right, #004aad, #cb6ce6); }
         .kpi-card.kpi-bueno::before { background: #15803d; }
         .kpi-card.kpi-regular::before { background: #b45309; }
-        .kpi-card.kpi-bajo::before { background: #b91c1c; }
+        .kpi-card.kpi-bajo::before { background: #c2410c; }
         .kpi-card.kpi-critico::before { background: #b91c1c; }
         .kpi-card:nth-child(odd) { margin-right: 2%; }
         .kpi-value { font-size: 20px; font-weight: 600; color: #0f172a; margin: 1px 0; }
         .kpi-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
-        .kpi-status { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 3px; margin-top: 0px; }
         
+        /* Etiquetas de estado de KPIs sin resaltado / fondo */
+        .kpi-status { display: inline-block; font-size: 11px; font-weight: 600; padding: 0; margin-top: 2px; background: transparent !important; }
         .status-fino { color: #665cca; }
         .status-bueno { color: #15803d; }
         .status-regular { color: #b45309; }
-        .status-bajo { color: #b91c1c; }
+        .status-bajo { color: #c2410c; }
         .status-critico { color: #b91c1c; }
 
         /* Categorías y Tablas */
@@ -363,7 +364,7 @@
             <p class="summary-text">[Resumen_Ejecutivo_Limpio]</p>
         </div>
 
-        <h3>📊 Ventas de Hoy</h3>
+        <h3>📊 RESULTADOS GENERALES</h3>
         <div class="kpi-row">
             <div class="kpi-card [clase_linea_venta]">
                 <div class="kpi-label">Venta Total</div>
@@ -543,7 +544,7 @@
 
     <!-- PÁGINA 5: EVOLUCIÓN (ROADMAP) -->
     <div class="section-evolution">
-        <h2>🚀 Plan de Crecimiento</h2>
+        <h2>🎯 Plan de Crecimiento</h2>
         <p class="evolution-desc-text"></p>
         
         <div class="evolution-wrapper">
@@ -658,9 +659,37 @@
                     <!-- [FIN_SI_ESTABILIDAD_FASE_3_ACTIVA] -->
                 </div>
             </div>
+
+            <!-- FASE 4 -->
+            <div class="evo-card-linear">
+                <div class="evo-left-content">
+                    <div class="evo-fase-label">Fase 04</div>
+                    <div class="evo-title">Más Ganancias</div>
+                    <p class="evo-desc">Maximiza tus márgenes y rentabilidad total para aumentar tus ganancias totales.</p>
+                    
+                    <div class="evo-metas-box">
+                        <!-- [LOOP_METAS_FASE_4_INICIO] -->
+                        <div class="evo-meta-item">
+                            <span class="evo-meta-label">[meta_X_nombre]:</span> 
+                            <span class="evo-meta-val">[meta_X_valores]</span> 
+                            <span class="evo-meta-ok">[meta_X_check]</span>
+                        </div>
+                        <!-- [LOOP_METAS_FASE_4_FIN] -->
+                    </div>
+                </div>
+                <div class="evo-right-meta">
+                    <div class="evo-bar-container">
+                        <div class="evo-bar-fill [fase_4_clase_barra]" style="width: [fase_4_ancho_barra];"></div>
+                    </div>
+                    <span class="evo-status-text" style="color: [fase_4_color_texto];">[fase_4_estado]</span>
+                    <!-- [SI_ESTABILIDAD_FASE_4_ACTIVA] -->
+                    <span class="evo-stability-text">Estabilidad (Día [dia_prueba]/14)</span>
+                    <!-- [FIN_SI_ESTABILIDAD_FASE_4_ACTIVA] -->
+                </div>
+            </div>
         </div>
     </div>
-
+    
     <div id="fin-del-reporte">&nbsp;</div>
 </body>
 </html>
