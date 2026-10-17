@@ -1,20 +1,19 @@
 import json
+import os
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from collections import defaultdict
 from fastapi import FastAPI, HTTPException
+
+app = FastAPI()
 
 DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
-app = FastAPI(title="Consolidador Mensual API")
-
-
-def calcular_margen(ganancia: float, ventas: float) -> float:
+def calcular_margen(ganancia, ventas):
     if ventas > 0:
         return round((ganancia / ventas) * 100, 2)
     return 0.0
 
-
-def parsear_fecha(fecha_str: str) -> datetime:
+def parsear_fecha(fecha_str):
     for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
         try:
             return datetime.strptime(fecha_str, fmt)
@@ -22,15 +21,14 @@ def parsear_fecha(fecha_str: str) -> datetime:
             pass
     return datetime.min
 
-
-def obtener_nombre_dia(fecha_str: str) -> str:
+def obtener_nombre_dia(fecha_str):
     dt = parsear_fecha(fecha_str)
     if dt != datetime.min:
         return DIAS_SEMANA[dt.weekday()]
     return "desconocido"
 
-
-def obtener_dict_inv(dia: dict) -> dict:
+def obtener_dict_inv(dia):
+    """Extrae el diccionario de inventario tolerando estructuras planas o anidadas en 'generales'."""
     inv = dia.get("kpis_inventario", {})
     if isinstance(inv, dict) and "generales" in inv and isinstance(inv["generales"], dict):
         res = inv["generales"].copy()
@@ -40,15 +38,7 @@ def obtener_dict_inv(dia: dict) -> dict:
         return res
     return inv if isinstance(inv, dict) else {}
 
-
-def procesar_mes(dias_json: Union[str, list, dict], anio_mes_filtro: str = None) -> dict:
-    # Si Make envía el JSON como texto plano (string), lo convertimos a objeto
-    if isinstance(dias_json, str):
-        try:
-            dias_json = json.loads(dias_json)
-        except Exception:
-            return {"error": "El cuerpo de la petición no es un JSON válido"}
-
+def procesar_mes(dias_json, anio_mes_filtro=None):
     if isinstance(dias_json, dict):
         dias_json = [dias_json]
 
@@ -98,15 +88,13 @@ def procesar_mes(dias_json: Union[str, list, dict], anio_mes_filtro: str = None)
 
     categorias_dict = {}
     productos_dict = {}
-    semanas_dict = {}
+    semanas_dict = defaultdict(list)
 
     for dt, dia in sorted([(parsear_fecha(d["informacion_sistema"]["fecha_reporte"]), d) for d in dias_ordenados], key=lambda x: x[0]):
         anio_iso, num_semana, _ = dt.isocalendar()
-        clave_sem = (anio_iso, num_semana)
-        if clave_sem not in semanas_dict:
-            semanas_dict[clave_sem] = []
-        semanas_dict[clave_sem].append((dt, dia))
+        semanas_dict[(anio_iso, num_semana)].append((dt, dia))
 
+        fecha = dia["informacion_sistema"]["fecha_reporte"]
         fin = dia.get("kpis_financieros", {})
         
         v_dia = fin.get("venta_total_usd") or 0.0
@@ -379,15 +367,35 @@ def procesar_mes(dias_json: Union[str, list, dict], anio_mes_filtro: str = None)
     }
 
 
-# Endpoints de la API
-@app.get("/")
-def health_check():
-    return {"status": "ok", "message": "Consolidador Mensual API funcionando correctamente"}
+@app.post("/")
+async def endpoint_consolidador(payload: dict):
+    """
+    Endpoint FastAPI para recibir las solicitudes HTTP desde Make.com.
+    Espera un JSON con estructura: {"dias_json": [...], "anio_mes_filtro": "2026-09"}
+    """
+    try:
+        dias_json = payload.get("dias_json")
+        anio_mes_filtro = payload.get("anio_mes_filtro")
+
+        if not dias_json:
+            raise HTTPException(
+                status_code=400,
+                detail="El campo 'dias_json' es obligatorio en el cuerpo de la solicitud."
+            )
+
+        resultado = procesar_mes(dias_json, anio_mes_filtro=anio_mes_filtro)
+        
+        if isinstance(resultado, dict) and "error" in resultado:
+            raise HTTPException(status_code=400, detail=resultado["error"])
+
+        return resultado
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/procesar-mes")
-def api_procesar_mes(payload: Union[List[Dict[str, Any]], Dict[str, Any], str], anio_mes_filtro: str = None):
-    resultado = procesar_mes(payload, anio_mes_filtro=anio_mes_filtro)
-    if isinstance(resultado, dict) and "error" in resultado:
-        raise HTTPException(status_code=400, detail=resultado["error"])
-    return resultado
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
