@@ -33,7 +33,7 @@ def normalizar_catalogo(catalogo):
             return {}
 
     if isinstance(catalogo, list):
-        return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo}
+        return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo if isinstance(item, dict)}
     elif isinstance(catalogo, dict):
         return {str(k).strip(): v for k, v in catalogo.items()}
     return {}
@@ -86,6 +86,10 @@ def obtener_info_catalogo(codigo, nombre, catalogo_dict, errores):
 # ==========================================
 
 def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nuevos=None):
+    # Asegurar entradas válidas para evitar errores si llegan vacías o nulas
+    ventas = ventas or {}
+    inventario = inventario or {}
+
     # 1. UNIR CATÁLOGOS
     dict_memoria = normalizar_catalogo(catalogo_memoria)
     dict_nuevos = normalizar_catalogo(catalogo_nuevos)
@@ -99,6 +103,8 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nu
 
     # 2. ENRIQUECER TABLA MIX
     for producto in ventas.get("tabla_mix_productos", []):
+        if not isinstance(producto, dict):
+            continue
         codigo = str(producto.get("codigo_articulo", "")).strip()
         nombre = str(producto.get("nombre", "")).strip()
 
@@ -111,9 +117,13 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nu
     key_facturas = "facturas_agrupadas" if "facturas_agrupadas" in ventas else "facturas"
 
     for factura in ventas.get(key_facturas, []):
+        if not isinstance(factura, dict):
+            continue
         key_articulos = "articulos" if "articulos" in factura else "productos"
 
         for producto in factura.get(key_articulos, []):
+            if not isinstance(producto, dict):
+                continue
             codigo = str(producto.get("codigo_articulo", "")).strip()
             nombre = str(producto.get("nombre", "")).strip()
 
@@ -124,6 +134,8 @@ def ejecutar_enriquecedor(ventas, inventario, catalogo_memoria=None, catalogo_nu
 
     # 4. ENRIQUECER INVENTARIO
     for producto in inventario.get("productos", []):
+        if not isinstance(producto, dict):
+            continue
         codigo = str(producto.get("codigo_articulo", "")).strip()
         nombre = str(producto.get("nombre", "")).strip()
 
