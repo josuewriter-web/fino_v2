@@ -18,6 +18,10 @@ from scripts.diario.motor_estado import ejecutar_motor_estado
 from scripts.semanal.consolidador import procesar_semana
 from scripts.semanal.comparador import comparar_semanas
 
+# Flujo Mensual
+from scripts.mensual.consolidador_mensual import procesar_mes
+from scripts.mensual.comparador_mensual import comparar_meses
+
 app = FastAPI()
 
 # Función auxiliar para emojis en PDF
@@ -60,12 +64,10 @@ class PayloadMotorEstado(BaseModel):
 
 # --- ENDPOINTS FLUJO DIARIO ---
 
-# Endpoint 1: Buscar Tasa BCV
 @app.get("/bcv")
 def api_bcv():
     return obtener_tasa_y_fecha()
 
-# Endpoint 2: Ingestor
 @app.post("/ingestor")
 async def endpoint_ingestor(
     file_inventario: UploadFile = File(...),
@@ -76,25 +78,12 @@ async def endpoint_ingestor(
 ):
     bytes_inv = await file_inventario.read()
     bytes_ventas = await file_ventas.read()
+    return ejecutar_ingestor(bytes_inv, bytes_ventas, nombre_negocio, fecha, tasa_bcv)
 
-    return ejecutar_ingestor(
-        bytes_inv, 
-        bytes_ventas, 
-        nombre_negocio, 
-        fecha, 
-        tasa_bcv
-    )
-
-# Endpoint 3: Catalogador
 @app.post("/catalogador")
 async def endpoint_catalogador(payload: PayloadCatalogador):
-    return ejecutar_catalogador(
-        payload.ventas,
-        payload.inventario,
-        payload.catalogo_maestro
-    )
+    return ejecutar_catalogador(payload.ventas, payload.inventario, payload.catalogo_maestro)
 
-# Endpoint 4: Enriquecedor
 @app.post("/enriquecedor")
 async def endpoint_enriquecedor(payload: PayloadEnriquecedor):
     return ejecutar_enriquecedor(
@@ -104,38 +93,21 @@ async def endpoint_enriquecedor(payload: PayloadEnriquecedor):
         catalogo_nuevos=payload.catalogo_nuevos
     )
 
-# Endpoint 5: Control de Inventario
 @app.post("/control-inventario")
 async def endpoint_control_inventario(payload: PayloadControlInventario):
-    return ejecutar_control_inventario(
-        payload.inventario,
-        payload.ventas,
-        payload.memoria
-    )
+    return ejecutar_control_inventario(payload.inventario, payload.ventas, payload.memoria)
 
-# Endpoint 6: Motor Financiero
 @app.post("/motor-financiero")
 async def endpoint_motor_financiero(payload: PayloadMotorFinanciero):
-    return ejecutar_motor_financiero(
-        payload.inventario_actualizado,
-        payload.kpis_inventario,
-        payload.ventas_clasificado
-    )
+    return ejecutar_motor_financiero(payload.inventario_actualizado, payload.kpis_inventario, payload.ventas_clasificado)
 
-# Endpoint 7: Motor de Estado
 @app.post("/motor-estado")
 async def endpoint_motor_estado(payload: PayloadMotorEstado):
-    return ejecutar_motor_estado(
-        payload.estado,
-        payload.kpis_financieros,
-        payload.kpis_inventario,
-        payload.fecha
-    )
+    return ejecutar_motor_estado(payload.estado, payload.kpis_financieros, payload.kpis_inventario, payload.fecha)
 
 
 # --- ENDPOINTS FLUJO SEMANAL ---
 
-# Endpoint 9: Procesar Semana (Consolidador)
 @app.post("/procesar-semana")
 def api_procesar_semana(payload: Union[List[Dict[str, Any]], Dict[str, Any]], key: Optional[str] = None):
     resultado = procesar_semana(payload)
@@ -143,20 +115,45 @@ def api_procesar_semana(payload: Union[List[Dict[str, Any]], Dict[str, Any]], ke
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado
 
-# Endpoint 10: Comparar Semanas (Comparador)
 @app.post("/comparar")
 async def api_comparar(request: Request):
     data = await request.json()
     semana_actual = data.get("semana_actual", data)
     semana_pasada = data.get("semana_pasada")
-
     resultado = comparar_semanas(semana_actual, semana_pasada)
+    return JSONResponse(content=resultado)
+
+
+# --- ENDPOINTS FLUJO MENSUAL ---
+
+@app.post("/procesar-mes")
+def api_procesar_mes(payload: Union[List[Dict[str, Any]], Dict[str, Any]]):
+    """Consolida los reportes diarios para generar los KPIs del mes."""
+    datos_entrada = payload.get("dias_json", payload) if isinstance(payload, dict) else payload
+    if not datos_entrada:
+        raise HTTPException(status_code=400, detail="El cuerpo de la solicitud no contiene datos válidos.")
+    
+    resultado = procesar_mes(datos_entrada)
+    if isinstance(resultado, dict) and "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+
+@app.post("/comparar-meses")
+async def api_comparar_meses(request: Request):
+    """Compara el mes actual con el mes pasado y calcula variaciones."""
+    data = await request.json()
+    mes_actual = data.get("mes_actual")
+    mes_pasado = data.get("mes_pasado")
+
+    if not mes_actual:
+        raise HTTPException(status_code=400, detail="El campo 'mes_actual' es obligatorio en el cuerpo de la solicitud.")
+
+    resultado = comparar_meses(mes_actual, mes_pasado)
     return JSONResponse(content=resultado)
 
 
 # --- ENDPOINT COMPARTIDO / UTILIDAD ---
 
-# Endpoint 8: Convertir PDF (WeasyPrint)
 @app.post("/convertir")
 async def convertir_pdf(request: Request):
     body = await request.body()
