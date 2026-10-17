@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import io
 from datetime import datetime
+from fastapi import HTTPException
 
 CONFIG = {
     "columnas_inventario": {
@@ -24,8 +25,11 @@ CONFIG = {
 
 def obtener_dia_semana(fecha_str):
     dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-    fecha_obj = datetime.strptime(fecha_str, "%d/%m/%Y")
-    return dias[fecha_obj.weekday()]
+    try:
+        fecha_obj = datetime.strptime(fecha_str, "%d/%m/%Y")
+        return dias[fecha_obj.weekday()]
+    except Exception:
+        return "Desconocido"
 
 def convertir_numero(valor):
     if pd.isna(valor):
@@ -40,33 +44,35 @@ def convertir_numero(valor):
     except ValueError:
         return 0.0
 
-# Lee el archivo desde la memoria RAM (bytes)
 def leer_contenido(contenido_bytes, mapa_columnas):
-    texto = contenido_bytes.decode('utf-8', errors='ignore')
-    lineas = texto.splitlines()
-    columnas_pos = list(mapa_columnas.values())
-    
-    fila_inicio = 0
-    encontrado = False
+    try:
+        texto = contenido_bytes.decode('utf-8', errors='ignore')
+        columnas_pos = list(mapa_columnas.values())
+        lineas = texto.splitlines()
+        
+        fila_inicio = 0
+        encontrado = False
 
-    for i, linea in enumerate(lineas):
-        if all(col in linea for col in columnas_pos):
-            fila_inicio = i
-            encontrado = True
-            break
-                
-    if not encontrado:
-        raise ValueError(f"No se encontró el encabezado. Buscaba: {columnas_pos}")
+        for i, linea in enumerate(lineas):
+            if all(col in linea for col in columnas_pos):
+                fila_inicio = i
+                encontrado = True
+                break
+                    
+        if not encontrado:
+            raise ValueError(f"No se encontró el encabezado. Buscava: {columnas_pos}")
 
-    buffer = io.StringIO(texto)
-    df = pd.read_csv(buffer, skiprows=fila_inicio, sep=None, engine='python')
+        buffer = io.StringIO(texto)
+        df = pd.read_csv(buffer, skiprows=fila_inicio, sep=None, engine='python')
 
-    faltan = [col for col in columnas_pos if col not in df.columns]
-    if faltan:
-        raise ValueError(f"Faltan columnas: {faltan}")
+        faltan = [col for col in columnas_pos if col not in df.columns]
+        if faltan:
+            raise ValueError(f"Faltan columnas obligatorias: {faltan}")
 
-    mapa_inverso = {v: k for k, v in mapa_columnas.items()}
-    return df.rename(columns=mapa_inverso)
+        mapa_inverso = {v: k for k, v in mapa_columnas.items()}
+        return df.rename(columns=mapa_inverso)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al procesar el archivo CSV: {str(e)}")
 
 def procesar_inventario(contenido_bytes, tasa_bcv):
     df = leer_contenido(contenido_bytes, CONFIG["columnas_inventario"])
@@ -143,8 +149,11 @@ def generar_tabla_mix(df_ventas):
     mix = mix.sort_values(by="ingresos_usd", ascending=False)
     return mix.to_dict("records")
 
-# Función principal que llama FastAPI
+# Función ejecutora principal
 def ejecutar_ingestor(bytes_inv, bytes_ventas, nombre_negocio, fecha, tasa_bcv):
+    if tasa_bcv <= 0:
+        raise HTTPException(status_code=400, detail="La tasa BCV debe ser mayor a 0 para realizar la conversión.")
+
     info_sistema = {
         "nombre_negocio": nombre_negocio,
         "fecha_reporte": fecha,
@@ -158,7 +167,6 @@ def ejecutar_ingestor(bytes_inv, bytes_ventas, nombre_negocio, fecha, tasa_bcv):
     facturas, df_ventas = procesar_ventas(bytes_ventas, tasa_bcv, mapa_costos)
     tabla_mix = generar_tabla_mix(df_ventas)
 
-    # Retorna el resultado como diccionario (FastAPI lo convierte a JSON)
     return {
         "inventario": {
             "informacion_sistema": info_sistema,
