@@ -20,54 +20,65 @@ def normalizar_catalogo(catalogo):
             return {}
 
     if isinstance(catalogo, list):
-        return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo}
+        return {str(item.get("codigo_articulo", "")).strip(): item for item in catalogo if isinstance(item, dict)}
     elif isinstance(catalogo, dict):
         return {str(k).strip(): v for k, v in catalogo.items()}
     return {}
 
 
 def extraer_skus_ventas(ventas):
+    """Extrae los SKUs presentes en la tabla mix del reporte de ventas."""
     resultado = {}
-    tabla = ventas.get("tabla_mix_productos", [])
+    ventas_dict = ventas if isinstance(ventas, dict) else {}
+    tabla = ventas_dict.get("tabla_mix_productos", [])
 
-    for producto in tabla:
-        codigo = str(producto.get("codigo_articulo", "")).strip()
-        if not codigo:
-            continue
+    if isinstance(tabla, list):
+        for producto in tabla:
+            if isinstance(producto, dict):
+                codigo = str(producto.get("codigo_articulo", "")).strip()
+                if not codigo:
+                    continue
 
-        resultado[codigo] = {
-            "codigo_articulo": codigo,
-            "nombre": str(producto.get("nombre", "")).strip()
-        }
+                resultado[codigo] = {
+                    "codigo_articulo": codigo,
+                    "nombre": str(producto.get("nombre", "")).strip()
+                }
 
     return resultado
 
 
 def extraer_skus_inventario(inventario):
+    """Extrae los SKUs presentes en el reporte de inventario."""
     resultado = {}
-    productos = inventario.get("productos", [])
+    inventario_dict = inventario if isinstance(inventario, dict) else {}
+    productos = inventario_dict.get("productos", [])
 
-    for producto in productos:
-        codigo = str(producto.get("codigo_articulo", "")).strip()
-        if not codigo:
-            continue
+    if isinstance(productos, list):
+        for producto in productos:
+            if isinstance(producto, dict):
+                codigo = str(producto.get("codigo_articulo", "")).strip()
+                if not codigo:
+                    continue
 
-        resultado[codigo] = {
-            "codigo_articulo": codigo,
-            "nombre": str(producto.get("nombre", "")).strip()
-        }
+                resultado[codigo] = {
+                    "codigo_articulo": codigo,
+                    "nombre": str(producto.get("nombre", "")).strip()
+                }
 
     return resultado
 
 
 def unir_skus(*listas):
+    """Unifica múltiples diccionarios de SKUs evitando duplicados."""
     resultado = {}
     for lista in listas:
-        resultado.update(lista)
+        if isinstance(lista, dict):
+            resultado.update(lista)
     return resultado
 
 
 def detectar_nuevos(skus_detectados, catalogo):
+    """Compara los SKUs detectados hoy contra el catálogo maestro guardado."""
     nuevos = []
     catalogo_dict = normalizar_catalogo(catalogo)
 
@@ -83,6 +94,14 @@ def detectar_nuevos(skus_detectados, catalogo):
 # ==========================================
 
 def ejecutar_catalogador(ventas, inventario, catalogo_maestro=None):
+    """
+    Función principal que procesa las ventas e inventario del día,
+    detecta si hay SKUs nuevos respecto al catálogo en memoria y 
+    retorna el resumen listo para el siguiente paso del flujo.
+    """
+    # Garantiza que las entradas sean diccionarios/objetos válidos
+    ventas = ventas or {}
+    inventario = inventario or {}
     if catalogo_maestro is None:
         catalogo_maestro = {}
 
