@@ -28,7 +28,6 @@ def obtener_nombre_dia(fecha_str):
     return "desconocido"
 
 def obtener_dict_inv(dia):
-    """Extrae el diccionario de inventario tolerando estructuras planas o anidadas en 'generales'."""
     inv = dia.get("kpis_inventario", {})
     if isinstance(inv, dict) and "generales" in inv and isinstance(inv["generales"], dict):
         res = inv["generales"].copy()
@@ -66,7 +65,7 @@ def procesar_mes(dias_json, anio_mes_filtro=None):
         dias_filtrados = [d for dt, d in dias_validos if dt.strftime("%Y-%m") == primer_mes]
 
     if not dias_filtrados:
-        return {"error": f"No hay registros para el período especificado ({anio_mes_filtro})"}
+        return {"error": f"No hay registros para el período especificado"}
 
     dias_ordenados = dias_filtrados
     dias_disponibles = len(dias_ordenados)
@@ -94,9 +93,7 @@ def procesar_mes(dias_json, anio_mes_filtro=None):
         anio_iso, num_semana, _ = dt.isocalendar()
         semanas_dict[(anio_iso, num_semana)].append((dt, dia))
 
-        fecha = dia["informacion_sistema"]["fecha_reporte"]
         fin = dia.get("kpis_financieros", {})
-        
         v_dia = fin.get("venta_total_usd") or 0.0
         c_dia = fin.get("costo_de_ventas_usd") or 0.0
         g_dia = fin.get("ganancia_real_usd") or 0.0
@@ -167,18 +164,13 @@ def procesar_mes(dias_json, anio_mes_filtro=None):
     serie_semanal = []
     for clave_semana, dias_semana in sorted(semanas_dict.items()):
         dias_semana.sort(key=lambda x: x[0])
-        
         f_inicio_sem = dias_semana[0][1]["informacion_sistema"]["fecha_reporte"]
         f_fin_sem = dias_semana[-1][1]["informacion_sistema"]["fecha_reporte"]
         
-        v_sem = 0.0
-        c_sem = 0.0
-        g_sem = 0.0
-        fac_sem = 0
-        cli_sem = 0
-        u_sem = 0.0
-        
+        v_sem = c_sem = g_sem = u_sem = 0.0
+        fac_sem = cli_sem = 0
         desglose_diario = []
+        
         for dt, dia in dias_semana:
             fecha = dia["informacion_sistema"]["fecha_reporte"]
             nombre_dia = obtener_nombre_dia(fecha)
@@ -370,20 +362,14 @@ def procesar_mes(dias_json, anio_mes_filtro=None):
 @app.post("/")
 async def endpoint_consolidador(payload: dict):
     """
-    Endpoint FastAPI para recibir las solicitudes HTTP desde Make.com.
-    Espera un JSON con estructura: {"dias_json": [...], "anio_mes_filtro": "2026-09"}
+    Endpoint FastAPI que acepta directamente los datos de KPIs (lista o diccionario)
+    enviados desde Make.com, idéntico al flujo local.
     """
     try:
-        dias_json = payload.get("dias_json")
-        anio_mes_filtro = payload.get("anio_mes_filtro")
+        # Acepta directamente el payload si es la lista o busca la clave común de entrada
+        datos_entrada = payload.get("dias_json", payload) if isinstance(payload, dict) else payload
 
-        if not dias_json:
-            raise HTTPException(
-                status_code=400,
-                detail="El campo 'dias_json' es obligatorio en el cuerpo de la solicitud."
-            )
-
-        resultado = procesar_mes(dias_json, anio_mes_filtro=anio_mes_filtro)
+        resultado = procesar_mes(datos_entrada)
         
         if isinstance(resultado, dict) and "error" in resultado:
             raise HTTPException(status_code=400, detail=resultado["error"])
