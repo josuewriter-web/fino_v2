@@ -1,9 +1,10 @@
+import json
+import os
+import sys
 from datetime import datetime
-from typing import Any, Dict, Optional
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException
 
-app = FastAPI(title="Comparador Semanal API")
+app = FastAPI()
 
 
 def parsear_fecha(fecha_str):
@@ -24,17 +25,11 @@ def extraer_kpis(semana_dict: dict) -> dict:
     return semana_dict.get("kpis_semana", semana_dict)
 
 
-def obtener_identificadores(act_kpis, semana_actual_raw):
-    """Calcula automáticamente semana_id y fechas_rango si no vienen en el JSON."""
+def obtener_semana_id(act_kpis, semana_actual_raw):
+    """Calcula automáticamente semana_id si no viene en el JSON."""
     semana_id = act_kpis.get("semana_id") or semana_actual_raw.get("semana_id")
-    fechas_rango = act_kpis.get("fechas_rango") or semana_actual_raw.get("fechas_rango")
-
     periodo = act_kpis.get("periodo", {})
     f_ini = periodo.get("fecha_inicio")
-    f_fin = periodo.get("fecha_fin")
-
-    if not fechas_rango and f_ini and f_fin:
-        fechas_rango = f"{f_ini} al {f_fin}" if f_ini != f_fin else f_ini
 
     if not semana_id and f_ini:
         dt = parsear_fecha(f_ini)
@@ -44,7 +39,17 @@ def obtener_identificadores(act_kpis, semana_actual_raw):
         else:
             semana_id = "Semana-Desconocida"
 
-    return semana_id, fechas_rango
+    return semana_id
+
+
+def normalizar_periodo(periodo_dict):
+    """Asegura que el periodo tenga el campo cobertura_completa."""
+    if not isinstance(periodo_dict, dict):
+        return {}
+    p = dict(periodo_dict)
+    if "cobertura_completa" not in p:
+        p["cobertura_completa"] = True
+    return p
 
 
 def calc_variacion(actual, anterior):
@@ -65,21 +70,31 @@ def calc_variacion(actual, anterior):
     return diff_val, pct
 
 
-def comparar_bloque_kpis(dict_actual, dict_anterior):
+def comparar_bloque_kpis(dict_actual, dict_anterior, orden_llaves=None):
     dict_actual = dict_actual or {}
     dict_anterior = dict_anterior or {}
 
     todas_las_llaves = set(dict_actual.keys()).union(set(dict_anterior.keys()))
     todas_las_llaves.discard("concentracion_top5_porcentaje")
 
-    resultado = {}
+    if orden_llaves:
+        llaves_ordenadas = [k for k in orden_llaves if k in todas_las_llaves] + [k for k in sorted(todas_las_llaves) if k not in orden_llaves]
+    else:
+        llaves_ordenadas = sorted(todas_las_llaves)
 
-    for key in todas_las_llaves:
+    resultado = {}
+    for key in llaves_ordenadas:
         val_act = dict_actual.get(key)
         val_ant = dict_anterior.get(key)
 
         if isinstance(val_act, dict) or isinstance(val_ant, dict):
-            resultado[key] = comparar_bloque_kpis(val_act, val_ant)
+            sub_orden = None
+            if key == "desglose_origen":
+                sub_orden = ["reventa", "elaborado"]
+            elif key in ("reventa", "elaborado"):
+                sub_orden = ["ventas_usd", "costo_usd", "ganancia_usd", "margen_porcentaje", "unidades"]
+
+            resultado[key] = comparar_bloque_kpis(val_act, val_ant, orden_llaves=sub_orden)
         elif isinstance(val_act, (int, float)) or isinstance(val_ant, (int, float)):
             abs_change, pct_change = calc_variacion(val_act, val_ant)
             resultado[key] = {
@@ -106,7 +121,7 @@ def comparar_categorias(cats_actual, cats_anterior):
     }
     todas = set(cats_act_map.keys()).union(set(cats_ant_map.keys()))
 
-    resultado = {}
+    lista_comparacion = []
     campos_num = [
         "ventas_usd",
         "costo_usd",
@@ -120,9 +135,7 @@ def comparar_categorias(cats_actual, cats_anterior):
         act = cats_act_map.get(cat)
         ant = cats_ant_map.get(cat)
 
-        res_cat = {
-            "estado": "mantiene" if act and ant else ("nuevo" if act else "salio")
-        }
+        res_cat = {}
 
         for campo in campos_num:
             v_act = act.get(campo) if act else None
@@ -136,7 +149,7 @@ def comparar_categorias(cats_actual, cats_anterior):
             }
 
         p_act = act.get("participacion_porcentaje") if act else None
-        p_ant = ant.get("participacion_porcentaje") if ant else None
+        p_ant = ant.get("participacion_porcentaje") if act else None
         p_abs, p_pct = calc_variacion(p_act, p_ant)
         res_cat["participacion_porcentaje"] = {
             "anterior": p_ant,
@@ -145,7 +158,15 @@ def comparar_categorias(cats_actual, cats_anterior):
             "variacion_porcentual": p_pct,
         }
 
-        resultado[cat] = res_cat
+        ventas_orden = act.get("ventas_usd", 0) if act else 0
+        lista_comparacion.append((ventas_orden, cat, res_cat))
+
+    lista_comparacion.sort(key=lambda x: x[0], reverse=True)
+
+    resultado = {}
+    for _, cat_nombre, item in lista_comparacion:
+        resultado[cat_nombre] = item
+
     return resultado
 
 
@@ -189,7 +210,7 @@ def comparar_semanas(semana_actual, semana_pasada):
     act_kpis = extraer_kpis(semana_actual)
     pas_kpis = extraer_kpis(semana_pasada)
 
-    semana_id, fechas_rango = obtener_identificadores(act_kpis, semana_actual)
+    semana_id = obtener_semana_id(act_kpis, semana_actual)
     comparacion_disponible = bool(
         pas_kpis and isinstance(pas_kpis, dict) and pas_kpis.get("periodo")
     )
@@ -198,12 +219,12 @@ def comparar_semanas(semana_actual, semana_pasada):
         act_kpis.get("comportamiento_temporal", {})
     )
 
-    # Sección datos_semana (SOLO DATOS CRUDOS DE LA SEMANA ACTUAL)
-    datos_semana = {
-        "comparacion_disponible": comparacion_disponible,
+    periodo_actual = normalizar_periodo(act_kpis.get("periodo", {}))
+    periodo_anterior = normalizar_periodo(pas_kpis.get("periodo", {})) if comparacion_disponible else None
+
+    datos_absolutos = {
         "semana_id": semana_id,
-        "fechas_rango": fechas_rango,
-        "periodo": act_kpis.get("periodo", {}),
+        "periodo": periodo_actual,
         "hitos_semanales": act_kpis.get("hitos_semanales", {}),
         "evolucion_diaria": act_kpis.get("evolucion_diaria", []),
         "tops": {
@@ -216,25 +237,67 @@ def comparar_semanas(semana_actual, semana_pasada):
     }
 
     if not comparacion_disponible:
-        datos_semana["mensaje"] = "No se proporcionó información válida de la semana pasada."
+        datos_absolutos["mensaje"] = "No se proporcionó información válida de la semana pasada."
         return {
-            "datos_semana": datos_semana,
-            "metricas_comparadas": {
-                "datos_semana_actual": act_kpis
+            "datos_absolutos": datos_absolutos,
+            "variaciones_semanales": {
+                "comparacion_disponible": False,
+                "semana_id": semana_id,
+                "periodo_actual": periodo_actual,
+                "periodo_anterior": None,
+                "datos_semana_actual": act_kpis,
             },
         }
 
+    orden_kpis_semanales = [
+        "venta_total_usd",
+        "costo_total_usd",
+        "ganancia_total_usd",
+        "margen_semanal_porcentaje",
+        "unidades_totales_vendidas",
+        "total_facturas",
+        "total_clientes",
+        "ticket_promedio_usd",
+        "articulos_por_factura",
+        "desglose_origen"
+    ]
+
+    orden_inventario = [
+        "unidades_inicio_semana",
+        "unidades_fin_semana",
+        "skus_activos_fin_semana",
+        "salud_inventario_porcentaje",
+        "costo_inventario_usd",
+        "venta_potencial_usd",
+        "ganancia_proyectada_usd",
+        "mermas_totales_unidades",
+        "mermas_totales_usd",
+        "valor_en_riesgo_usd",
+        "valor_vencido_usd",
+        "capital_estancado_total_costo_usd",
+        "capital_estancado_total_venta_usd"
+    ]
+
     return {
-        "datos_semana": datos_semana,
-        "metricas_comparadas": {
+        "datos_absolutos": datos_absolutos,
+        "variaciones_semanales": {
+            "comparacion_disponible": True,
+            "semana_id": semana_id,
+            "periodo_actual": periodo_actual,
+            "periodo_anterior": periodo_anterior,
             "kpis_semanales": comparar_bloque_kpis(
-                act_kpis.get("kpis_semanales"), pas_kpis.get("kpis_semanales")
+                act_kpis.get("kpis_semanales"), 
+                pas_kpis.get("kpis_semanales"),
+                orden_llaves=orden_kpis_semanales
             ),
             "inventario": comparar_bloque_kpis(
-                act_kpis.get("inventario"), pas_kpis.get("inventario")
+                act_kpis.get("inventario"), 
+                pas_kpis.get("inventario"),
+                orden_llaves=orden_inventario
             ),
             "categorias": comparar_categorias(
-                act_kpis.get("categorias"), pas_kpis.get("categorias")
+                act_kpis.get("categorias"), 
+                pas_kpis.get("categorias")
             ),
             "comportamiento_temporal": comparar_comportamiento_temporal(
                 act_kpis.get("comportamiento_temporal"),
@@ -244,18 +307,31 @@ def comparar_semanas(semana_actual, semana_pasada):
     }
 
 
-# --- RUTAS DE LA API ---
+@app.post("/")
+async def endpoint_comparador_semanal(payload: dict):
+    """
+    Endpoint FastAPI para recibir las solicitudes HTTP desde Make.com.
+    Espera un JSON con estructura: {"semana_actual": {...}, "semana_pasada": {...}}
+    """
+    try:
+        semana_actual = payload.get("semana_actual")
+        semana_pasada = payload.get("semana_pasada")
 
-@app.get("/")
-def home():
-    return {"status": "ok", "message": "API Comparador activa"}
+        if not semana_actual:
+            raise HTTPException(
+                status_code=400, 
+                detail="El campo 'semana_actual' es obligatorio en el cuerpo de la solicitud."
+            )
+
+        resultado = comparar_semanas(semana_actual, semana_pasada)
+        return resultado
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/comparar")
-async def api_comparar(request: Request):
-    data = await request.json()
-    semana_actual = data.get("semana_actual", data)
-    semana_pasada = data.get("semana_pasada")
-
-    resultado = comparar_semanas(semana_actual, semana_pasada)
-    return JSONResponse(content=resultado)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
