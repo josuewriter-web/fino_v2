@@ -19,8 +19,8 @@ from scripts.semanal.consolidador import procesar_semana
 from scripts.semanal.comparador import comparar_semanas
 
 # Flujo Mensual
-from scripts.mensual.consolidador_mensual import procesar_mes
-from scripts.mensual.comparador_mensual import comparar_meses
+from scripts.mensual.consolidador import procesar_mes
+from scripts.mensual.comparador import comparar_meses
 
 app = FastAPI()
 
