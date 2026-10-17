@@ -1,20 +1,18 @@
 import json
+import os
 from datetime import datetime
-from typing import Any, Dict, List, Union
 from fastapi import FastAPI, HTTPException
+
+app = FastAPI()
 
 DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
-app = FastAPI(title="Consolidador Semanal API")
-
-
-def calcular_margen(ganancia: float, ventas: float) -> float:
+def calcular_margen(ganancia, ventas):
     if ventas > 0:
         return round((ganancia / ventas) * 100, 2)
     return 0.0
 
-
-def parsear_fecha(fecha_str: str) -> datetime:
+def parsear_fecha(fecha_str):
     for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
         try:
             return datetime.strptime(fecha_str, fmt)
@@ -22,15 +20,14 @@ def parsear_fecha(fecha_str: str) -> datetime:
             pass
     return datetime.min
 
-
-def obtener_nombre_dia(fecha_str: str) -> str:
+def obtener_nombre_dia(fecha_str):
     dt = parsear_fecha(fecha_str)
     if dt != datetime.min:
         return DIAS_SEMANA[dt.weekday()]
     return "desconocido"
 
-
-def obtener_dict_inv(dia: dict) -> dict:
+def obtener_dict_inv(dia):
+    """Extrae el diccionario de inventario tolerando estructuras planas o anidadas en 'generales'."""
     inv = dia.get("kpis_inventario", {})
     if isinstance(inv, dict) and "generales" in inv and isinstance(inv["generales"], dict):
         res = inv["generales"].copy()
@@ -40,15 +37,7 @@ def obtener_dict_inv(dia: dict) -> dict:
         return res
     return inv if isinstance(inv, dict) else {}
 
-
-def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
-    # Si Make envía el JSON como texto plano (string), lo convertimos a objeto
-    if isinstance(dias_json, str):
-        try:
-            dias_json = json.loads(dias_json)
-        except Exception:
-            return {"error": "El cuerpo de la petición no es un JSON válido"}
-
+def procesar_semana(dias_json):
     if isinstance(dias_json, dict):
         dias_json = [dias_json]
 
@@ -66,16 +55,6 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
 
     fecha_inicio = dias_ordenados[0]["informacion_sistema"]["fecha_reporte"]
     fecha_fin = dias_ordenados[-1]["informacion_sistema"]["fecha_reporte"]
-
-    # Generar identificadores automáticos para la memoria de rotación
-    dt_inicio = parsear_fecha(fecha_inicio)
-    if dt_inicio != datetime.min:
-        iso_year, iso_week, _ = dt_inicio.isocalendar()
-        semana_id = f"{iso_year}-W{iso_week:02d}"
-    else:
-        semana_id = "Semana-Desconocida"
-
-    fechas_rango = f"{fecha_inicio} al {fecha_fin}" if fecha_inicio != fecha_fin else fecha_inicio
 
     ventas_totales = 0.0
     costo_total = 0.0
@@ -166,8 +145,6 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
                     "nombre": prod.get("nombre", "Desconocido"),
                     "categoria": prod.get("categoria", "General"),
                     "tipo_origen": tipo_origen,
-                    "semana_id": semana_id,
-                    "fechas_rango": fechas_rango,
                     "ventas_usd": 0.0, 
                     "costo_usd": 0.0, 
                     "ganancia_usd": 0.0, 
@@ -240,10 +217,8 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
     top_vendidos = sorted(lista_productos, key=lambda x: x["unidades"], reverse=True)[:5]
     top_rentables = sorted(lista_productos, key=lambda x: x["ganancia_usd"], reverse=True)[:5]
     
-    # Cálculo interno para la concentración del top 5 de ventas
     top_facturacion_calc = sorted(lista_productos, key=lambda x: x["ventas_usd"], reverse=True)[:5]
 
-    # --- SECCIÓN: Selección de SKUs por unidades vendidas para la Guía de Rotación (máx 20) ---
     prods_elaborados = [p for p in lista_productos if p.get("tipo_origen") == "elaborado"]
     prods_reventa = [p for p in lista_productos if p.get("tipo_origen") != "elaborado"]
 
@@ -325,8 +300,6 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
 
     return {
         "kpis_semana": {
-            "semana_id": semana_id,
-            "fechas_rango": fechas_rango,
             "periodo": {
                 "fecha_inicio": fecha_inicio,
                 "fecha_fin": fecha_fin,
@@ -354,7 +327,7 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
                 "salud_inventario_porcentaje": inv_final.get("salud_del_inventario") or inv_final.get("salud_inventario") or 100.0,
                 "costo_inventario_usd": val_econ_final.get("valor_costo_total_usd") or 0.0,
                 "venta_potencial_usd": val_econ_final.get("valor_potencial_total_usd") or 0.0,
-                "ganancia_proyectada_usd": val_econ_final.get("ganancia_proyectada_usd") or 0.0,
+                "ganancia_proyectada_usd": val_econ_final.get("ganancia_proyectada_usd", 0.0),
                 "mermas_totales_unidades": round(mermas_totales_unidades, 2),
                 "mermas_totales_usd": round(mermas_totales_usd, 2),
                 "valor_en_riesgo_usd": inv_final.get("valor_en_riesgo") or 0.0,
@@ -376,15 +349,34 @@ def procesar_semana(dias_json: Union[str, list, dict]) -> dict:
     }
 
 
-# Endpoints de la API
-@app.get("/")
-def health_check():
-    return {"status": "ok", "message": "Consolidador Semanal API funcionando correctamente"}
+@app.post("/")
+async def endpoint_consolidador_semanal(payload: dict):
+    """
+    Endpoint FastAPI para recibir las solicitudes HTTP desde Make.com.
+    Procesa la lista de reportes diarios de KPIs tal como el script local.
+    """
+    try:
+        datos_entrada = payload.get("dias_json", payload) if isinstance(payload, dict) else payload
+
+        if not datos_entrada:
+            raise HTTPException(
+                status_code=400,
+                detail="El cuerpo de la solicitud no contiene datos válidos."
+            )
+
+        resultado = procesar_semana(datos_entrada)
+        
+        if isinstance(resultado, dict) and "error" in resultado:
+            raise HTTPException(status_code=400, detail=resultado["error"])
+
+        return resultado
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/procesar-semana")
-def api_procesar_semana(payload: Union[List[Dict[str, Any]], Dict[str, Any]], key: str = None):
-    resultado = procesar_semana(payload)
-    if isinstance(resultado, dict) and "error" in resultado:
-        raise HTTPException(status_code=400, detail=resultado["error"])
-    return resultado
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
