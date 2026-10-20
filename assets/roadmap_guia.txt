@@ -12,7 +12,7 @@ El crecimiento de un negocio es acumulativo. Cada fase resuelve un conjunto de l
 
 La lógica general del modelo es:
 
-* Datos → KPIs → Diagnóstico Inicial → Factores de crecimiento → Estado de la fase → Prioridades del negocio**
+* Datos → KPIs → Diagnóstico Inicial → Factores de crecimiento → Estado de la fase → Prioridades del negocio
 
 * KPIs: Son indicadores medibles.
 * Diagnóstico Inicial: Valida el estado real del negocio antes de comenzar el roadmap.
@@ -131,18 +131,18 @@ Incrementar el tamaño del negocio manteniendo la rentabilidad y el control oper
 
 ---
 
-## Interpretación del Progreso
+## Interpretación del Progreso y Evaluación de Estabilidad
 
 Antes de iniciar oficialmente el roadmap, el negocio atraviesa un Diagnóstico Inicial de 7 días. Durante este periodo no existe progreso de fase ni periodo de estabilidad.
 
 El cálculo del progreso comienza únicamente cuando inicia oficialmente la Fase 1.
 
-Cada fase posee objetivos medibles mediante sus KPIs principales. Cada KPI tiene un peso relativo dentro de la fase.
+Cada fase posee objetivos medibles mediante sus KPIs principales, donde cada KPI aporta un peso relativo dentro de la evaluación de la fase.
 
-* Porcentaje de avance: Representa el porcentaje de cumplimiento de los objetivos de la fase actual. No representa el estado general del negocio.
-* Periodo de estabilidad: Cuando una fase alcanza el 100%, entra en un periodo de estabilidad de 14 días para comprobar que los resultados obtenidos se mantienen de forma consistente.
-* Meta de estabilidad: Durante este periodo el objetivo no es crecer ni avanzar de fase, sino consolidar y proteger los KPIs alcanzados.
-* Pausa del contador: Si durante el periodo de estabilidad dejan de cumplirse las metas, el contador se pausa. Nunca se reinicia a cero.
+* **Porcentaje de avance:** Representa el nivel de cumplimiento de los objetivos específicos de la fase activa en el día evaluado.
+* **Periodo de estabilidad (Ventana Móvil):** Para asegurar que el logro no sea un resultado fortuito de un solo día, el negocio debe demostrar consistencia durante una ventana móvil de **14 días**.
+* **Protección contra la mala suerte (Tolerancia a Eventos Atípicos):** Un día desfavorable no reinicia el contador de estabilidad a cero. En su lugar, el sistema registra la serie de cumplimiento de los últimos 14 días.
+* **Criterio de Avance de Fase:** Para superar oficialmente una fase y avanzar a la siguiente, el negocio debe registrar un cumplimiento exitoso en **al menos 12 de los últimos 14 días evaluados** (efectividad $\ge 85.7\%$). Si en esa ventana móvil de 14 días los días exitosos son menores a 12, la fase se mantendrá "En progreso" continuando la consolidación diaria.
 
 ---
 
