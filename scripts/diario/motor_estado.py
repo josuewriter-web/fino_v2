@@ -47,11 +47,12 @@ def actualizar_objetivos_estrategicos(estado: dict, kpis_mapeados: dict, fecha_h
                 else:
                     avance = 0.0 
             else:
-                if objetivo_meta > inicial:
-                    avance = ((valor_actual - inicial) / (objetivo_meta - inicial)) * 100
-                    avance = min(max(avance, 0), 100)
+                denominador = objetivo_meta - inicial
+                if denominador > 0:
+                    avance = ((valor_actual - inicial) / denominador) * 100
+                    avance = min(max(avance, 0.0), 100.0)
                 else:
-                    avance = 100 if valor_actual >= objetivo_meta else 0
+                    avance = 100.0 if valor_actual >= objetivo_meta else 0.0
 
             suma_avances += avance
             total_metricas += 1
@@ -94,9 +95,10 @@ def procesar_observacion(estado: dict, fecha_hoy: str) -> bool:
         estado_act["nombre_fase"] = fase_1["nombre"]
         estado_act["fecha_inicio"] = fecha_hoy
         estado_act["fecha_inicio_roadmap"] = fecha_hoy
-        estado_act["dias_en_fase"] = 0  # Se incrementa a 1 en el flujo principal
+        estado_act["dias_en_fase"] = 0
         estado_act["progreso"] = 0
         estado_act["dias_estabilidad"] = 0
+        estado_act["historial_cumplimiento_reciente"] = []
         estado_act["estado"] = "En progreso"
 
         # Registrar Fase 0 en el historial
@@ -140,7 +142,7 @@ def evaluar_fase_actual(estado: dict, kpis_mapeados: dict):
     criterios = roadmap[fase_key].get("criterios", {})
     cumplidos = []
     pendientes = []
-    progreso = 0
+    progreso = 0.0
 
     for crit_key, crit_val in criterios.items():
         kpi_name = crit_val["kpi"]
@@ -164,13 +166,13 @@ def evaluar_fase_actual(estado: dict, kpis_mapeados: dict):
                 avance_kpi = min(actual / objetivo, 1.0)
             else:
                 avance_kpi = 1.0 if actual >= 0 else 0.0
-                
+
         elif comparacion == "menor_igual":
             if actual <= objetivo:
                 avance_kpi = 1.0
             else:
                 avance_kpi = (objetivo / actual) if actual > 0 else 0.0
-                
+
         elif comparacion == "igual":
             avance_kpi = 1.0 if logrado else 0.0
 
@@ -186,7 +188,12 @@ def evaluar_fase_actual(estado: dict, kpis_mapeados: dict):
     return cumplidos, pendientes
 
 
-def controlar_estabilidad(estado: dict, cumplidos: list, pendientes: list, fase_key: str):
+def controlar_estabilidad(estado: dict, cumplidos: list, pendientes: list, fase_key: str) -> bool:
+    """
+    Evalúa la estabilidad mediante una ventana móvil de los últimos 14 días.
+    Suma 1 día de estabilidad por cada día positivo sin reiniciar a cero de inmediato por un mal día.
+    Avanza si en una ventana de 14 días se cumplen las metas en al menos 12 días (>=85.7% de efectividad).
+    """
     estado_actual = estado["perfil_negocio"]["estado_actual"]
     roadmap = estado["perfil_negocio"]["roadmap"]
 
@@ -195,10 +202,28 @@ def controlar_estabilidad(estado: dict, cumplidos: list, pendientes: list, fase_
 
     dias_requeridos = roadmap[fase_key].get("dias_estabilidad_requeridos", 14)
 
-    if len(pendientes) == 0 and len(cumplidos) > 0:
-        estado_actual["dias_estabilidad"] += 1
+    if "historial_cumplimiento_reciente" not in estado_actual or not isinstance(estado_actual["historial_cumplimiento_reciente"], list):
+        estado_actual["historial_cumplimiento_reciente"] = []
 
-    return estado_actual["dias_estabilidad"] >= dias_requeridos
+    # Determinar si el día actual cumplió el 100% de las metas
+    dia_exitoso = (len(pendientes) == 0 and len(cumplidos) > 0)
+
+    # Registrar en el historial reciente
+    historial = estado_actual["historial_cumplimiento_reciente"]
+    historial.append(dia_exitoso)
+
+    # Mantener una ventana fija de como máximo 'dias_requeridos' (ej. 14 días)
+    if len(historial) > dias_requeridos:
+        historial.pop(0)
+
+    # Días efectivos logrados dentro de la ventana
+    dias_positivos = sum(1 for exito in historial if exito)
+    estado_actual["dias_estabilidad"] = dias_positivos
+
+    # Umbral de tolerancia: Al menos 12 días exitosos de los últimos 14
+    umbral_minimo = max(1, dias_requeridos - 2)
+
+    return len(historial) >= dias_requeridos and dias_positivos >= umbral_minimo
 
 
 def avanzar_fase(estado: dict, fase_key: str, fecha_hoy: str):
@@ -207,14 +232,16 @@ def avanzar_fase(estado: dict, fase_key: str, fecha_hoy: str):
     historial = estado["perfil_negocio"]["historial_fases"]
 
     fase_num = estado_actual["fase"]
-    fecha_inicio = estado_actual.get("fecha_inicio", fecha_hoy)
+    fecha_inicio = estado_actual.get("fecha_inicio") or fecha_hoy
 
-    try:
-        d1 = datetime.strptime(fecha_inicio, "%Y-%m-%d")
-        d2 = datetime.strptime(fecha_hoy, "%Y-%m-%d")
-        duracion = (d2 - d1).days
-    except Exception:
-        duracion = 0
+    duracion = 0
+    if fecha_inicio and fecha_hoy:
+        try:
+            d1 = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+            d2 = datetime.strptime(fecha_hoy, "%Y-%m-%d")
+            duracion = max((d2 - d1).days, 0)
+        except ValueError:
+            duracion = estado_actual.get("dias_en_fase", 0)
 
     historial.append({
         "fase": fase_num,
@@ -235,6 +262,7 @@ def avanzar_fase(estado: dict, fase_key: str, fecha_hoy: str):
         estado_actual["dias_en_fase"] = 0
         estado_actual["progreso"] = 0
         estado_actual["dias_estabilidad"] = 0
+        estado_actual["historial_cumplimiento_reciente"] = []
         estado_actual["estado"] = "En progreso"
     else:
         estado_actual["estado"] = "Roadmap Completado"
@@ -252,7 +280,7 @@ def ejecutar_motor_estado(
 
     fecha_hoy = fecha if fecha else datetime.today().strftime("%Y-%m-%d")
 
-    # Extraer KPIs financieros anidados
+    # Extraer KPIs financieros anidados si aplica
     kpis_fin = kpis_financieros.get("kpis_financieros", kpis_financieros)
     kpis_totales_brutos = {**kpis_fin, **kpis_inventario}
     kpis_mapeados = mapear_kpis_estrategicos(kpis_totales_brutos)
